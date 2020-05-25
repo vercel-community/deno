@@ -1,4 +1,4 @@
-# Verecl Deno Runtime (`vercel-deno`)
+# Vercel Deno Runtime (`vercel-deno`)
 
 The Deno Runtime compiles a TypeScript or JavaScript function into a serverless
 function.
