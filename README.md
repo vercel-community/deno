@@ -20,7 +20,7 @@ And define the **vercel-bash** runtime in your `vercel.json` file:
 {
 	"version": 2,
 	"functions": {
-		"api/*.sh": { "runtime": "vercel-bash@3.0.7" }
+		"api/**/*.[jt]s": { "runtime": "vercel-bash@0.0.1" }
 	}
 }
 ```
