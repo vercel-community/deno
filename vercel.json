@@ -1,0 +1,7 @@
+{
+  "public": true,
+  "builds": [
+    { "src": "api/**/*.ts", "use": "https://files-a52d5korc.now.sh" },
+    { "src": "api/**/*.js", "use": "https://files-a52d5korc.now.sh" }
+  ]
+}

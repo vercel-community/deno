@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+cd "$LAMBDA_TASK_ROOT"
+export DENO_DIR="$LAMBDA_TASK_ROOT/.deno"
+export PATH="$DENO_DIR/bin:$PATH"
+export NO_COLOR=1
+exec deno run \
+	--allow-env \
+	--allow-net \
+	--allow-read \
+	--allow-write \
+	".runtime.ts"

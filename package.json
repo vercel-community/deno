@@ -1,0 +1,44 @@
+{
+  "name": "vercel-deno",
+  "version": "0.0.0",
+  "description": "Vercel Runtime for Deno serverless functions",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Nathan Rajlich <nate@zeit.co>",
+  "license": "MIT",
+  "homepage": "https://github.com/TooTallNate/vercel-deno",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/importpw/vercel-bash.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc",
+    "postbuild": "cpy src '!**/*.ts' dist && cpy src/runtime.ts dist",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@tootallnate/once": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^12.12.17",
+    "@typescript-eslint/eslint-plugin": "1.6.0",
+    "@typescript-eslint/parser": "1.1.0",
+    "@vercel/build-utils": "^2.3.1",
+    "@vercel/frameworks": "^0.0.14",
+    "@vercel/routing-utils": "^1.8.2",
+    "cpy-cli": "^2.0.0",
+    "eslint": "5.16.0",
+    "eslint-config-airbnb": "17.1.0",
+    "eslint-config-prettier": "4.1.0",
+    "eslint-import-resolver-typescript": "1.1.1",
+    "eslint-plugin-import": "2.16.0",
+    "eslint-plugin-jsx-a11y": "6.2.1",
+    "eslint-plugin-react": "7.12.4",
+    "rimraf": "^3.0.0",
+    "typescript": "^3.9.3"
+  }
+}

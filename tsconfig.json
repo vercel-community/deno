@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "CommonJS",
+    "target": "es2015",
+    "esModuleInterop": true,
+    "lib": ["esnext"],
+    "outDir": "dist",
+    "sourceMap": true,
+    "declaration": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "src/runtime.ts"]
+}
