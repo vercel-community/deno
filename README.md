@@ -1,7 +1,6 @@
-# Vercel Deno Runtime (`vercel-deno`)
-
 [<img src="https://assets.vercel.com/image/upload/v1588805858/repositories/vercel/logo.png" height="96"><img src="https://raw.githubusercontent.com/denolib/high-res-deno-logo/master/deno_hr_circle.svg" height="104" />](https://github.com/TooTallNate/vercel-deno)
 
+# Vercel Deno Runtime (`vercel-deno`)
 
 The Deno Runtime compiles a TypeScript or JavaScript function into a serverless
 function.
