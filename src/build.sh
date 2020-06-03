@@ -1,9 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# Version of `deno` to install
-DENO_VERSION="1.0.5"
-
 export NO_COLOR=1
 
 # Prepare for `deno.zip` download from GitHub Releases
@@ -15,8 +12,8 @@ export PATH="$DENO_BIN_DIR:$PATH"
 
 # Download `deno`
 cd "$DENO_BIN_DIR"
-echo "Downloading \`deno\` v${DENO_VERSION}…"
-curl -sfLS "https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" > deno.zip
+echo "Downloading \`deno\` ${DENO_VERSION}…"
+curl -sfLS "https://github.com/denoland/deno/releases/download/${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" > deno.zip
 unzip -q deno.zip
 rm deno.zip
 cd "$ROOT_DIR"

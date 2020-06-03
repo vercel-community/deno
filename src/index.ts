@@ -31,10 +31,20 @@ export async function build({
 
 	await download(files, workPath, meta);
 
+	let denoVersion = 'v1.0.2';
+	if (typeof config.denoVersion === 'string') {
+		denoVersion = config.denoVersion;
+	}
+
+	if (!denoVersion.startsWith('v')) {
+		denoVersion = `v${denoVersion}`;
+	}
+
 	const env = {
 		...process.env,
 		BUILDER: __dirname,
-		ENTRYPOINT: entrypoint
+		ENTRYPOINT: entrypoint,
+		DENO_VERSION: denoVersion
 	};
 
 	const builderPath = join(__dirname, 'build.sh');
