@@ -22,7 +22,7 @@ And define the **vercel-deno** runtime in your `vercel.json` file:
 {
 	"version": 2,
 	"functions": {
-		"api/**/*.[jt]s": { "runtime": "vercel-deno@0.0.3" }
+		"api/**/*.[jt]s": { "runtime": "vercel-deno@0.0.4" }
 	}
 }
 ```
