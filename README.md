@@ -16,13 +16,13 @@ export default async (req: ServerRequest) => {
 }
 ```
 
-And define the **vercel-bash** runtime in your `vercel.json` file:
+And define the **vercel-deno** runtime in your `vercel.json` file:
 
 ```json
 {
 	"version": 2,
 	"functions": {
-		"api/**/*.[jt]s": { "runtime": "vercel-bash@0.0.2" }
+		"api/**/*.[jt]s": { "runtime": "vercel-deno@0.0.2" }
 	}
 }
 ```
