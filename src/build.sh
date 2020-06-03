@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Version of `deno` to install
-DENO_VERSION="1.0.2"
+DENO_VERSION="1.0.5"
 
 export NO_COLOR=1
 
