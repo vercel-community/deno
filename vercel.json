@@ -1,11 +1,6 @@
 {
   "public": true,
-  "build": {
-    "env": {
-      "DENO_VERSION": "1.0.5"
-    }
-  },
   "functions": {
-    "api/**/*.[jt]s": { "runtime": "vercel-deno@0.1.1" }
+    "api/**/*.[jt]s": { "runtime": "vercel-deno@0.1.2" }
   }
 }
