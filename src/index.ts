@@ -99,6 +99,7 @@ export async function build({
 	// to hot-fix a Deno issue (https://github.com/denoland/deno/issues/6080).
 	const workPathUri = `file://${workPath}`;
 	for await (const file of getGraphFiles(join(workPath, '.deno/gen/file'))) {
+		let needsWrite = false;
 		const graph: Graph = JSON.parse(await readFile(file, 'utf8'));
 		for (let i = 0; i < graph.deps.length; i++) {
 			const dep = graph.deps[i];
@@ -107,9 +108,13 @@ export async function build({
 					workPathUri.length
 				)}`;
 				graph.deps[i] = updated;
+				needsWrite = true;
 			}
 		}
-		await writeFile(file, JSON.stringify(graph));
+		if (needsWrite) {
+			console.log('Patched %j', file);
+			await writeFile(file, JSON.stringify(graph));
+		}
 	}
 
 	const lambda = await createLambda({
