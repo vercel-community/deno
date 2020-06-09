@@ -21,7 +21,8 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@tootallnate/once": "latest"
+    "@tootallnate/once": "^1.1.2",
+    "yn": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^12.12.17",

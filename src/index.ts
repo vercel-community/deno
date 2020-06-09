@@ -1,3 +1,4 @@
+import yn from 'yn';
 import { join } from 'path';
 import { spawn } from 'child_process';
 import once from '@tootallnate/once';
@@ -31,7 +32,18 @@ export async function build({
 
 	await download(files, workPath, meta);
 
-	let denoVersion = 'v1.0.2';
+	let debug = false;
+
+	if (typeof config.debug === 'boolean') {
+		debug = config.debug;
+	} else if (typeof config.debug === 'string' || typeof config.debug === 'number') {
+		const d = yn(config.debug);
+		if (typeof d === 'boolean') {
+			debug = d;
+		}
+	}
+
+	let denoVersion = process.env.DENO_VERSION || 'v1.0.2';
 	if (typeof config.denoVersion === 'string') {
 		denoVersion = config.denoVersion;
 	}
@@ -40,12 +52,16 @@ export async function build({
 		denoVersion = `v${denoVersion}`;
 	}
 
-	const env = {
+	const env: typeof process.env = {
 		...process.env,
 		BUILDER: __dirname,
 		ENTRYPOINT: entrypoint,
 		DENO_VERSION: denoVersion
 	};
+
+	if (debug) {
+		env.DEBUG = '1';
+	}
 
 	const builderPath = join(__dirname, 'build.sh');
 	const cp = spawn(builderPath, [], {

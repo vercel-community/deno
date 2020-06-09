@@ -22,13 +22,23 @@ echo "Installed \`deno\`:"
 deno --version
 echo
 
-cp "$BUILDER/bootstrap" "bootstrap"
-cp "$BUILDER/runtime.ts" ".runtime.ts"
+cp ${DEBUG:+-v} "$BUILDER/bootstrap" "bootstrap"
+cp ${DEBUG:+-v} "$BUILDER/runtime.ts" ".runtime.ts"
 
 echo "Caching imports for \"$ENTRYPOINT\"…"
 deno cache "$ENTRYPOINT" ".runtime.ts"
 
 # Move the `gen` files to match AWS `/var/task`
-mkdir -p "$DENO_DIR/gen/file/var"
-mv "$DENO_DIR/gen/file$ROOT_DIR" "$DENO_DIR/gen/file/var/task"
-rm -rf "$DENO_DIR/gen/file/$(echo "$ROOT_DIR" | awk -F'/' '{print $2}')"
+mkdir -p${DEBUG:+v} "$DENO_DIR/gen/file/var"
+mv ${DEBUG:+-v} "$DENO_DIR/gen/file$ROOT_DIR" "$DENO_DIR/gen/file/var/task"
+rm -rf${DEBUG:+v} "$DENO_DIR/gen/file/$(echo "$ROOT_DIR" | awk -F'/' '{print $2}')"
+
+
+if [ -n "${DEBUG-}" ]; then
+	eval "$(curl -sfLS https://import.pw)"
+	import "static-binaries"
+	static_binaries tree
+	echo
+	echo "Final Lambda tree:"
+	tree -a .
+fi
