@@ -15,6 +15,8 @@ import {
 
 const { stat, readdir, readFile, writeFile } = fs.promises;
 
+const DEFAULT_DENO_VERSION = 'v1.0.5';
+
 interface Graph {
 	deps: string[];
 	version_hash: string;
@@ -62,7 +64,7 @@ export async function build({
 		}
 	}
 
-	let denoVersion = process.env.DENO_VERSION || 'v1.0.2';
+	let denoVersion = process.env.DENO_VERSION || DEFAULT_DENO_VERSION;
 	if (typeof config.denoVersion === 'string') {
 		denoVersion = config.denoVersion;
 	}
