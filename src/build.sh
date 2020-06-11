@@ -9,12 +9,16 @@ export DENO_DIR="$ROOT_DIR/.deno"
 DENO_BIN_DIR="$DENO_DIR/bin"
 mkdir -p "$DENO_BIN_DIR"
 export PATH="$DENO_BIN_DIR:$PATH"
+PLATFORM=unknown-linux-gnu
+if [ "$(uname)" = "Darwin" ]; then
+  PLATFORM=apple-darwin
+fi
 
 # Download `deno`
 cd "$DENO_BIN_DIR"
 echo "Downloading \`deno\` ${DENO_VERSION}…"
-curl -sfLS "https://github.com/denoland/deno/releases/download/${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip" > deno.zip
-unzip -q deno.zip
+curl -sfLS "https://github.com/denoland/deno/releases/download/${DENO_VERSION}/deno-x86_64-${PLATFORM}.zip" > deno.zip
+unzip -oq deno.zip
 rm deno.zip
 cd "$ROOT_DIR"
 
