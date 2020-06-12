@@ -15,7 +15,7 @@ const {
 	AWS_LAMBDA_LOG_STREAM_NAME,
 	LAMBDA_TASK_ROOT,
 	_HANDLER,
-	AWS_LAMBDA_RUNTIME_API
+	AWS_LAMBDA_RUNTIME_API,
 } = Deno.env.toObject();
 
 // delete process.env.SHLVL;
@@ -94,7 +94,7 @@ async function processEvents(): Promise<void> {
 				statusCode: parseInt(firstLine.split(' ', 2)[1], 10),
 				headers: headersObj,
 				encoding: 'base64',
-				body: base64.fromUint8Array(body)
+				body: base64.fromUint8Array(body),
 			};
 		} catch (e) {
 			console.error('Invoke Error:', e);
@@ -142,7 +142,7 @@ async function nextInvocation() {
 		invokedFunctionArn: res.headers.get(
 			'lambda-runtime-invoked-function-arn'
 		),
-		getRemainingTimeInMillis: () => deadlineMs - Date.now()
+		getRemainingTimeInMillis: () => deadlineMs - Date.now(),
 	};
 
 	const clientContext = res.headers.get('lambda-runtime-client-context');
@@ -164,9 +164,9 @@ async function invokeResponse(result: any, context: any) {
 	const res = await request(`invocation/${context.awsRequestId}/response`, {
 		method: 'POST',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
 		},
-		body: JSON.stringify(result)
+		body: JSON.stringify(result),
 	});
 	if (res.status !== 202) {
 		throw new Error(
@@ -185,9 +185,9 @@ async function postError(path: string, err: Error): Promise<void> {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
-			'Lambda-Runtime-Function-Error-Type': 'Unhandled'
+			'Lambda-Runtime-Function-Error-Type': 'Unhandled',
 		},
-		body: JSON.stringify(lambdaErr)
+		body: JSON.stringify(lambdaErr),
 	});
 	if (res.status !== 202) {
 		throw new Error(
@@ -203,7 +203,7 @@ async function request(path: string, options?: RequestInit) {
 	return {
 		status: res.status,
 		headers: res.headers,
-		body
+		body,
 	};
 }
 
@@ -211,11 +211,11 @@ function toLambdaErr({ name, message, stack }: Error) {
 	return {
 		errorType: name,
 		errorMessage: message,
-		stackTrace: (stack || '').split('\n').slice(1)
+		stackTrace: (stack || '').split('\n').slice(1),
 	};
 }
 
-start().catch(err => {
+start().catch((err) => {
 	console.error(err);
 	Deno.exit(1);
 });
