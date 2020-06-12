@@ -119,10 +119,10 @@
     lodash.unescape "4.0.1"
     semver "5.5.0"
 
-"@vercel/build-utils@^2.3.1":
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/@vercel/build-utils/-/build-utils-2.3.1.tgz#5c95b502edd1908e54b7902468ddfdc1d69c4aa0"
-  integrity sha512-+ZWdxYKYnc8/go9BVVcd79N1DinSRRZGjmpqBHLXa+o9/TSUQ6LO5rjzYpRCEfRlmNGrlrk/8fNFJcJzyoLbCg==
+"@vercel/build-utils@^2.4.0":
+  version "2.4.0"
+  resolved "https://registry.yarnpkg.com/@vercel/build-utils/-/build-utils-2.4.0.tgz#c756a3804f072cc693ebe0bbcc1adcce61b9f15c"
+  integrity sha512-VRXMLBPDcpFUHQMgHdgYHBl9SRwqNFb43tgkMdTYaNml2HgqlLNvNuINKlqwB2/Q/tARIWcm4jmPKR0gu1CaEQ==
 
 "@vercel/frameworks@^0.0.14":
   version "0.0.14"

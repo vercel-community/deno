@@ -17,7 +17,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "tsc",
-    "postbuild": "cpy src '!**/*.ts' dist && cpy src/runtime.ts dist",
+    "postbuild": "cpy src '!**/*.ts' dist && cpy src/runtime.ts src/dev-server.ts dist",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -28,7 +28,7 @@
     "@types/node": "^12.12.17",
     "@typescript-eslint/eslint-plugin": "1.6.0",
     "@typescript-eslint/parser": "1.1.0",
-    "@vercel/build-utils": "^2.3.1",
+    "@vercel/build-utils": "^2.4.0",
     "@vercel/frameworks": "^0.0.14",
     "@vercel/routing-utils": "^1.8.2",
     "cpy-cli": "^2.0.0",
