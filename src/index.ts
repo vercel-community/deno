@@ -166,7 +166,7 @@ export async function startDevServer(
 	const env: typeof process.env = {
 		...process.env,
 		...meta.env,
-		VERCEL_DEV_ENTRYPOINT: join(workPath, entrypoint)
+		VERCEL_DEV_ENTRYPOINT: join(workPath, entrypoint),
 	};
 
 	const args: string[] = [
@@ -175,13 +175,13 @@ export async function startDevServer(
 		'--allow-net',
 		'--allow-read',
 		'--allow-write',
-		join(__dirname, 'dev-server.ts')
+		join(__dirname, 'dev-server.ts'),
 	];
 
 	const child = spawn('deno', args, {
 		cwd: workPath,
 		env,
-		stdio: ['ignore', 'inherit', 'inherit', 'pipe']
+		stdio: ['ignore', 'inherit', 'inherit', 'pipe'],
 	});
 
 	const portPipe = child.stdio[3];
@@ -189,9 +189,9 @@ export async function startDevServer(
 		throw new Error('Not readable');
 	}
 
-	const onPort = new Promise<PortInfo>(resolve => {
+	const onPort = new Promise<PortInfo>((resolve) => {
 		portPipe.setEncoding('utf8');
-		portPipe.once('data', d => {
+		portPipe.once('data', (d) => {
 			resolve({ port: Number(d) });
 		});
 	});
@@ -202,8 +202,8 @@ export async function startDevServer(
 	if (isPortInfo(result)) {
 		return {
 			port: result.port,
-			pid: child.pid
-		}
+			pid: child.pid,
+		};
 	} else {
 		// Got "exit" event from child process
 		throw new Error(
