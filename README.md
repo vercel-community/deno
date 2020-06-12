@@ -22,9 +22,19 @@ And define the **vercel-deno** runtime in your `vercel.json` file:
 {
 	"version": 2,
 	"functions": {
-		"api/**/*.{j,t}s": { "runtime": "vercel-deno@0.1.3" }
+		"api/**/*.{j,t}s": { "runtime": "vercel-deno@0.2.0" }
 	}
 }
 ```
 
 **Demo:** https://vercel-deno.vercel.app/api/hello
+
+
+## Development
+
+The `vercel dev` command is supported, with some caveats:
+
+ - Vercel CLI v19.1.0 or newer is required.
+ - Currently supports Linux and macOS. Windows support will be coming soon.
+ - Uses the `deno` binary installed on the system (does not download `deno`).
+ - Specifying a specific version of Deno via `DENO_VERSION` env var is not supported.
