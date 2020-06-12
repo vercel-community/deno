@@ -2,14 +2,17 @@ import fs from 'fs';
 import yn from 'yn';
 import { join } from 'path';
 import { spawn } from 'child_process';
+import { Readable } from 'stream';
 import once from '@tootallnate/once';
 import {
 	AnalyzeOptions,
 	BuildOptions,
 	Env,
-	glob,
-	download,
+	StartDevServerOptions,
+	StartDevServerResult,
 	createLambda,
+	download,
+	glob,
 	shouldServe,
 } from '@vercel/build-utils';
 
@@ -140,5 +143,71 @@ async function* getGraphFiles(dir: string): AsyncIterable<string> {
 				yield* getGraphFiles(absolutePath);
 			}
 		}
+	}
+}
+
+interface PortInfo {
+	port: number;
+}
+
+function isPortInfo(v: any): v is PortInfo {
+	return v && typeof v.port === 'number';
+}
+
+function isReadable(v: any): v is Readable {
+	return v && v.readable === true;
+}
+
+export async function startDevServer(
+	opts: StartDevServerOptions
+): Promise<StartDevServerResult> {
+	const { entrypoint, workPath, meta = {} } = opts;
+
+	const env: typeof process.env = {
+		...process.env,
+		...meta.env,
+		VERCEL_DEV_ENTRYPOINT: join(workPath, entrypoint),
+	};
+
+	const args: string[] = [
+		'run',
+		'--allow-env',
+		'--allow-net',
+		'--allow-read',
+		'--allow-write',
+		join(__dirname, 'dev-server.ts'),
+	];
+
+	const child = spawn('deno', args, {
+		cwd: workPath,
+		env,
+		stdio: ['ignore', 'inherit', 'inherit', 'pipe'],
+	});
+
+	const portPipe = child.stdio[3];
+	if (!isReadable(portPipe)) {
+		throw new Error('Not readable');
+	}
+
+	const onPort = new Promise<PortInfo>((resolve) => {
+		portPipe.setEncoding('utf8');
+		portPipe.once('data', (d) => {
+			resolve({ port: Number(d) });
+		});
+	});
+	const onExit = once.spread<[number, string | null]>(child, 'exit');
+	const result = await Promise.race([onPort, onExit]);
+	onExit.cancel();
+
+	if (isPortInfo(result)) {
+		return {
+			port: result.port,
+			pid: child.pid,
+		};
+	} else {
+		// Got "exit" event from child process
+		throw new Error(
+			`Failed to start dev server for "${entrypoint}" (code=${result[0]}, signal=${result[1]})`
+		);
 	}
 }
