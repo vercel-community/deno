@@ -47,6 +47,8 @@ export default async (req: ServerRequest) => {
 		},
 		deno: {
 			pid: Deno.pid,
+			cwd: Deno.cwd(),
+			execPath: Deno.execPath(),
 			version: Deno.version,
 			build: Deno.build,
 			env: sortObject(Deno.env.toObject())
