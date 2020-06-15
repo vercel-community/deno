@@ -1,9 +1,5 @@
 /node_modules
-/yarn.lock
-/package.json
-/tsconfig.json
 /README.md
-/src
 /dist
 /test
 /.*

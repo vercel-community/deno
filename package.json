@@ -16,8 +16,9 @@
   ],
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "tsc",
+    "build": "tsc --project src/tsconfig.json",
     "postbuild": "cpy src '!**/*.ts' dist && cpy src/runtime.ts src/dev-server.ts dist",
+    "now-build": "next build",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "^12.12.17",
+    "@types/react": "^16.9.36",
     "@typescript-eslint/eslint-plugin": "1.6.0",
     "@typescript-eslint/parser": "1.1.0",
     "@vercel/build-utils": "^2.4.0",
@@ -39,6 +41,9 @@
     "eslint-plugin-import": "2.16.0",
     "eslint-plugin-jsx-a11y": "6.2.1",
     "eslint-plugin-react": "7.12.4",
+    "next": "^9.4.4",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
     "rimraf": "^3.0.0",
     "typescript": "^3.9.3"
   }
