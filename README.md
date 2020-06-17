@@ -29,6 +29,9 @@ And define the **vercel-deno** runtime in your `vercel.json` file:
 
 **Demo:** https://vercel-deno.vercel.app/api/hello
 
+> **Note:** Be sure to place the `vercel.json` file in the _root_ directory of
+> your project.
+
 
 ## Development
 
