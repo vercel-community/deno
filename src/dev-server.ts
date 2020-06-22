@@ -1,4 +1,4 @@
-import { serve } from 'https://deno.land/std@0.57.0/http/server.ts';
+import { Response, serve } from 'https://deno.land/std@0.57.0/http/server.ts';
 
 function isNetAddr(v: any): v is Deno.NetAddr {
 	return v && typeof v.port === 'number';
@@ -28,5 +28,9 @@ if (isNetAddr(s.listener.addr)) {
 
 // Serve HTTP requests to handler function
 for await (const req of s) {
-	handler(req);
+	handler(req).then((res: Response | void) => {
+		if (res) {
+			return req.respond(res);
+		}
+	});
 }

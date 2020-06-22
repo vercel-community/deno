@@ -1,9 +1,9 @@
 import * as base64 from 'https://deno.land/x/base64/mod.ts';
-import { ServerRequest } from 'https://deno.land/std@0.56.0/http/server.ts';
-import { TextProtoReader } from 'https://deno.land/std@0.56.0/textproto/mod.ts';
-import { BufReader, BufWriter } from 'https://deno.land/std@0.56.0/io/bufio.ts';
+import { TextProtoReader } from 'https://deno.land/std@0.58.0/textproto/mod.ts';
+import { BufReader, BufWriter } from 'https://deno.land/std@0.58.0/io/bufio.ts';
+import { ServerRequest, Response } from 'https://deno.land/std@0.58.0/http/server.ts';
 
-type Handler = (req: ServerRequest) => void;
+type Handler = (req: ServerRequest) => Promise<Response | void>;
 
 const RUNTIME_PATH = '2018-06-01/runtime';
 
@@ -65,7 +65,10 @@ async function processEvents(): Promise<void> {
 			req.w = new BufWriter(output);
 
 			// Run user code
-			await handler(req);
+			const res = await handler(req);
+			if (res) {
+				req.respond(res);
+			}
 
 			const responseError = await req.done;
 			if (responseError) {
