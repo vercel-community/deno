@@ -1,7 +1,10 @@
 import * as base64 from 'https://deno.land/x/base64/mod.ts';
 import { TextProtoReader } from 'https://deno.land/std@0.58.0/textproto/mod.ts';
 import { BufReader, BufWriter } from 'https://deno.land/std@0.58.0/io/bufio.ts';
-import { ServerRequest, Response } from 'https://deno.land/std@0.58.0/http/server.ts';
+import {
+	ServerRequest,
+	Response,
+} from 'https://deno.land/std@0.58.0/http/server.ts';
 
 type Handler = (req: ServerRequest) => Promise<Response | void>;
 

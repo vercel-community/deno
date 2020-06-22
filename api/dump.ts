@@ -1,6 +1,6 @@
-import { decode } from "https://deno.land/std@0.58.0/encoding/utf8.ts";
-import { ServerRequest } from "https://deno.land/std@0.58.0/http/server.ts";
-import { ms } from "https://raw.githubusercontent.com/denolib/ms/151c90aacba29ca0780fdc3b9f157c1baeac0ee1/ms.ts";
+import { decode } from 'https://deno.land/std@0.58.0/encoding/utf8.ts';
+import { ServerRequest } from 'https://deno.land/std@0.58.0/http/server.ts';
+import { ms } from 'https://raw.githubusercontent.com/denolib/ms/151c90aacba29ca0780fdc3b9f157c1baeac0ee1/ms.ts';
 
 interface HeadersObject {
 	[name: string]: any;
@@ -43,7 +43,7 @@ export default async (req: ServerRequest) => {
 			method: req.method,
 			url: req.url,
 			headers: sortObject(headersToObject(req.headers)),
-			body: decode(await Deno.readAll(req.body))
+			body: decode(await Deno.readAll(req.body)),
 		},
 		deno: {
 			pid: Deno.pid,
@@ -51,12 +51,12 @@ export default async (req: ServerRequest) => {
 			execPath: Deno.execPath(),
 			version: Deno.version,
 			build: Deno.build,
-			env: sortObject(Deno.env.toObject())
-		}
+			env: sortObject(Deno.env.toObject()),
+		},
 	};
 	req.respond({
 		status: 200,
 		headers,
-		body: JSON.stringify(body)
+		body: JSON.stringify(body),
 	});
-}
+};
