@@ -18,7 +18,7 @@ const {
 	AWS_LAMBDA_RUNTIME_API,
 } = Deno.env.toObject();
 
-// delete process.env.SHLVL;
+Deno.env.delete('SHLVL');
 
 async function start(): Promise<void> {
 	try {
@@ -39,7 +39,7 @@ async function processEvents(): Promise<void> {
 			if (!handler) {
 				const mod = await import(`./${_HANDLER}`);
 				handler = mod.default;
-				if (!handler) {
+				if (typeof handler !== 'function') {
 					throw new Error('Failed to load handler function');
 				}
 			}
@@ -121,13 +121,12 @@ async function nextInvocation() {
 		);
 	}
 
-	/*
-	if (res.headers['lambda-runtime-trace-id']) {
-		process.env._X_AMZN_TRACE_ID = res.headers['lambda-runtime-trace-id'];
+	const traceId = res.headers.get('lambda-runtime-trace-id');
+	if (typeof traceId === 'string') {
+		Deno.env.set('_X_AMZN_TRACE_ID', traceId);
 	} else {
-		delete process.env._X_AMZN_TRACE_ID;
+		Deno.env.delete('_X_AMZN_TRACE_ID');
 	}
-	*/
 
 	const deadlineMs = Number(res.headers.get('lambda-runtime-deadline-ms'));
 	const awsRequestId = res.headers.get('lambda-runtime-aws-request-id');
