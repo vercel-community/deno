@@ -1,8 +1,4 @@
-import { ServerRequest } from 'https://deno.land/std@0.57.0/http/server.ts';
-
-// In the current Oak, the `handleRequest()` function is private.
-// Here is the PR for my changes to make it public: https://git.io/Jfdix
-import { Application } from "https://raw.githubusercontent.com/TooTallNate/oak/1ef8db7fa4f3efbd8b0b15440f024ae68c705dc4/mod.ts";
+import { Application } from "https://deno.land/x/oak/mod.ts";
 
 const app = new Application();
 
@@ -11,4 +7,4 @@ app.use((ctx) => {
   console.log(ctx);
 });
 
-export default app.handleRequest;
+export default app.handle.bind(app);
