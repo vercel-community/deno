@@ -8,7 +8,7 @@ function isNetAddr(v: any): v is Deno.NetAddr {
 const entrypoint = Deno.env.get('VERCEL_DEV_ENTRYPOINT');
 const mod = await import(`file://${entrypoint}`);
 const handler = mod.default;
-if (!handler) {
+if (typeof handler !== 'function') {
 	throw new Error('Failed to load handler function');
 }
 
