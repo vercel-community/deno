@@ -7,4 +7,4 @@ app.use((ctx) => {
 	console.log(ctx);
 });
 
-export default app.handle.bind(app);
+export default app.handle;
