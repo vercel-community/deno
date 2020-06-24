@@ -1,4 +1,4 @@
-import ms from 'https://denopkg.com/TooTallNate/ms/ms.ts';
+import ms from 'https://denopkg.com/TooTallNate/ms';
 import { decode } from 'https://deno.land/std@0.58.0/encoding/utf8.ts';
 import { ServerRequest } from 'https://deno.land/std@0.58.0/http/server.ts';
 
