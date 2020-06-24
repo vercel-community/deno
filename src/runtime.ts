@@ -50,6 +50,8 @@ async function processEvents(): Promise<void> {
 			const data = JSON.parse(event.body);
 			const input = new Deno.Buffer(base64.toUint8Array(data.body || ''));
 			const output = new Deno.Buffer();
+			output.grow(1049000);
+
 			const req = new ServerRequest();
 			// req.conn
 			req.r = new BufReader(input);
