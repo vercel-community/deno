@@ -57,6 +57,6 @@ export default async (req: ServerRequest) => {
 	req.respond({
 		status: 200,
 		headers,
-		body: JSON.stringify(body),
+		body: JSON.stringify(body, null, 2),
 	});
 };
