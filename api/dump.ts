@@ -1,6 +1,6 @@
+import ms from 'https://denopkg.com/TooTallNate/ms/ms.ts';
 import { decode } from 'https://deno.land/std@0.58.0/encoding/utf8.ts';
 import { ServerRequest } from 'https://deno.land/std@0.58.0/http/server.ts';
-import { ms } from 'https://raw.githubusercontent.com/denolib/ms/151c90aacba29ca0780fdc3b9f157c1baeac0ee1/ms.ts';
 
 interface HeadersObject {
 	[name: string]: any;
