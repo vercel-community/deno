@@ -5,6 +5,7 @@ import {
 	ServerRequest,
 	Response,
 } from 'https://deno.land/std@0.58.0/http/server.ts';
+import { Context } from 'https://denopkg.com/DefinitelyTyped/DefinitelyTyped/types/aws-lambda/handler.d.ts';
 
 type Handler = (req: ServerRequest) => Promise<Response | void>;
 
@@ -135,21 +136,33 @@ async function nextInvocation() {
 
 	const deadlineMs = Number(res.headers.get('lambda-runtime-deadline-ms'));
 	const awsRequestId = res.headers.get('lambda-runtime-aws-request-id');
+	const invokedFunctionArn = res.headers.get(
+		'lambda-runtime-invoked-function-arn'
+	);
+	if (typeof awsRequestId !== 'string') {
+		throw new Error(
+			'Did not receive "lambda-runtime-aws-request-id" header'
+		);
+	}
+	if (typeof invokedFunctionArn !== 'string') {
+		throw new Error(
+			'Did not receive "lambda-runtime-invoked-function-arn" header'
+		);
+	}
 
-	//const context: LambdaContext = {
-	const context: any = {
+	const context: Context = {
 		callbackWaitsForEmptyEventLoop: false,
 		logGroupName: AWS_LAMBDA_LOG_GROUP_NAME,
 		logStreamName: AWS_LAMBDA_LOG_STREAM_NAME,
 		functionName: AWS_LAMBDA_FUNCTION_NAME,
 		memoryLimitInMB: AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
 		functionVersion: AWS_LAMBDA_FUNCTION_VERSION,
-		invokeid: awsRequestId,
 		awsRequestId,
-		invokedFunctionArn: res.headers.get(
-			'lambda-runtime-invoked-function-arn'
-		),
+		invokedFunctionArn,
 		getRemainingTimeInMillis: () => deadlineMs - Date.now(),
+		done: (error?: Error, result?: any): void => {},
+		fail: (error: Error | string): void => {},
+		succeed: (messageOrObject: any, obj?: any): void => {},
 	};
 
 	const clientContext = res.headers.get('lambda-runtime-client-context');
@@ -167,7 +180,7 @@ async function nextInvocation() {
 	return { event, context };
 }
 
-async function invokeResponse(result: any, context: any) {
+async function invokeResponse(result: any, context: Context) {
 	const res = await request(`invocation/${context.awsRequestId}/response`, {
 		method: 'POST',
 		headers: {
@@ -182,7 +195,7 @@ async function invokeResponse(result: any, context: any) {
 	}
 }
 
-async function invokeError(err: Error, context: any) {
+async function invokeError(err: Error, context: Context) {
 	return postError(`invocation/${context.awsRequestId}/error`, err);
 }
 
