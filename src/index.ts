@@ -142,7 +142,12 @@ export async function build({
 	for await (const file of getFilesWithExtension(genFileDir, '.buildinfo')) {
 		let needsWrite = false;
 		const buildInfo: BuildInfo = JSON.parse(await readFile(file, 'utf8'));
-		const { fileInfos, referencedMap, exportedModulesMap, semanticDiagnosticsPerFile } = buildInfo.program;;
+		const {
+			fileInfos,
+			referencedMap,
+			exportedModulesMap,
+			semanticDiagnosticsPerFile,
+		} = buildInfo.program;
 
 		for (const filename of Object.keys(fileInfos)) {
 			if (filename.startsWith(workPathUri)) {
@@ -155,7 +160,7 @@ export async function build({
 			}
 		}
 
-		for (const [ filename, refs ] of Object.entries(referencedMap)) {
+		for (const [filename, refs] of Object.entries(referencedMap)) {
 			for (let i = 0; i < refs.length; i++) {
 				const ref = refs[i];
 				if (ref.startsWith(workPathUri)) {
@@ -177,7 +182,7 @@ export async function build({
 			}
 		}
 
-		for (const [ filename, refs ] of Object.entries(exportedModulesMap)) {
+		for (const [filename, refs] of Object.entries(exportedModulesMap)) {
 			for (let i = 0; i < refs.length; i++) {
 				const ref = refs[i];
 				if (ref.startsWith(workPathUri)) {
@@ -225,7 +230,10 @@ export async function build({
 	return { output };
 }
 
-async function* getFilesWithExtension(dir: string, ext: string): AsyncIterable<string> {
+async function* getFilesWithExtension(
+	dir: string,
+	ext: string
+): AsyncIterable<string> {
 	const files = await readdir(dir);
 	for (const file of files) {
 		const absolutePath = join(dir, file);
