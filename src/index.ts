@@ -25,6 +25,24 @@ interface Graph {
 	version_hash: string;
 }
 
+interface FileInfo {
+	version: string;
+	signature: string;
+	affectsGlobalScope: boolean;
+}
+
+interface Program {
+	fileInfos: { [name: string]: FileInfo };
+	referencedMap: { [name: string]: string[] };
+	exportedModulesMap: { [name: string]: string[] };
+	semanticDiagnosticsPerFile: string[];
+}
+
+interface BuildInfo {
+	program: Program;
+	version: string;
+}
+
 export const version = 3;
 
 export { shouldServe };
@@ -101,7 +119,8 @@ export async function build({
 	// Patch the `.graph` files to use file paths beginning with `/var/task`
 	// to hot-fix a Deno issue (https://github.com/denoland/deno/issues/6080).
 	const workPathUri = `file://${workPath}`;
-	for await (const file of getGraphFiles(join(workPath, '.deno/gen/file'))) {
+	const genFileDir = join(workPath, '.deno/gen/file');
+	for await (const file of getFilesWithExtension(genFileDir, '.graph')) {
 		let needsWrite = false;
 		const graph: Graph = JSON.parse(await readFile(file, 'utf8'));
 		for (let i = 0; i < graph.deps.length; i++) {
@@ -116,31 +135,106 @@ export async function build({
 		}
 		if (needsWrite) {
 			console.log('Patched %j', file);
-			await writeFile(file, JSON.stringify(graph));
+			await writeFile(file, JSON.stringify(graph, null, 2));
 		}
 	}
 
-	const lambda = await createLambda({
+	for await (const file of getFilesWithExtension(genFileDir, '.buildinfo')) {
+		let needsWrite = false;
+		const buildInfo: BuildInfo = JSON.parse(await readFile(file, 'utf8'));
+		const { fileInfos, referencedMap, exportedModulesMap, semanticDiagnosticsPerFile } = buildInfo.program;;
+
+		for (const filename of Object.keys(fileInfos)) {
+			if (filename.startsWith(workPathUri)) {
+				const updated = `file:///var/task${filename.substring(
+					workPathUri.length
+				)}`;
+				fileInfos[updated] = fileInfos[filename];
+				delete fileInfos[filename];
+				needsWrite = true;
+			}
+		}
+
+		for (const [ filename, refs ] of Object.entries(referencedMap)) {
+			for (let i = 0; i < refs.length; i++) {
+				const ref = refs[i];
+				if (ref.startsWith(workPathUri)) {
+					const updated = `file:///var/task${ref.substring(
+						workPathUri.length
+					)}`;
+					refs[i] = updated;
+					needsWrite = true;
+				}
+			}
+
+			if (filename.startsWith(workPathUri)) {
+				const updated = `file:///var/task${filename.substring(
+					workPathUri.length
+				)}`;
+				referencedMap[updated] = refs;
+				delete referencedMap[filename];
+				needsWrite = true;
+			}
+		}
+
+		for (const [ filename, refs ] of Object.entries(exportedModulesMap)) {
+			for (let i = 0; i < refs.length; i++) {
+				const ref = refs[i];
+				if (ref.startsWith(workPathUri)) {
+					const updated = `file:///var/task${ref.substring(
+						workPathUri.length
+					)}`;
+					refs[i] = updated;
+					needsWrite = true;
+				}
+			}
+
+			if (filename.startsWith(workPathUri)) {
+				const updated = `file:///var/task${filename.substring(
+					workPathUri.length
+				)}`;
+				exportedModulesMap[updated] = refs;
+				delete exportedModulesMap[filename];
+				needsWrite = true;
+			}
+		}
+
+		for (let i = 0; i < semanticDiagnosticsPerFile.length; i++) {
+			const ref = semanticDiagnosticsPerFile[i];
+			if (ref.startsWith(workPathUri)) {
+				const updated = `file:///var/task${ref.substring(
+					workPathUri.length
+				)}`;
+				semanticDiagnosticsPerFile[i] = updated;
+				needsWrite = true;
+			}
+		}
+
+		if (needsWrite) {
+			console.log('Patched %j', file);
+			await writeFile(file, JSON.stringify(buildInfo, null, 2));
+		}
+	}
+
+	const output = await createLambda({
 		files: await glob('**', workPath),
 		handler: entrypoint,
 		runtime: 'provided',
 	});
 
-	return {
-		output: lambda,
-	};
+	return { output };
 }
 
-async function* getGraphFiles(dir: string): AsyncIterable<string> {
+async function* getFilesWithExtension(dir: string, ext: string): AsyncIterable<string> {
 	const files = await readdir(dir);
 	for (const file of files) {
 		const absolutePath = join(dir, file);
-		if (file.endsWith('.graph')) {
+		if (file.endsWith(ext)) {
 			yield absolutePath;
 		} else {
 			const s = await stat(absolutePath);
 			if (s.isDirectory()) {
-				yield* getGraphFiles(absolutePath);
+				yield* getFilesWithExtension(absolutePath, ext);
 			}
 		}
 	}
