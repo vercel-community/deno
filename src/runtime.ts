@@ -123,9 +123,11 @@ async function nextInvocation() {
 
 	if (res.status !== 200) {
 		throw new Error(
-			`Unexpected /invocation/next response: ${JSON.stringify(res)}`
+			`Unexpected "/invocation/next" response: ${JSON.stringify(res)}`
 		);
 	}
+
+	const deadlineMs = Number(res.headers.get('lambda-runtime-deadline-ms'));
 
 	const traceId = res.headers.get('lambda-runtime-trace-id');
 	if (typeof traceId === 'string') {
@@ -134,16 +136,16 @@ async function nextInvocation() {
 		Deno.env.delete('_X_AMZN_TRACE_ID');
 	}
 
-	const deadlineMs = Number(res.headers.get('lambda-runtime-deadline-ms'));
 	const awsRequestId = res.headers.get('lambda-runtime-aws-request-id');
-	const invokedFunctionArn = res.headers.get(
-		'lambda-runtime-invoked-function-arn'
-	);
 	if (typeof awsRequestId !== 'string') {
 		throw new Error(
 			'Did not receive "lambda-runtime-aws-request-id" header'
 		);
 	}
+
+	const invokedFunctionArn = res.headers.get(
+		'lambda-runtime-invoked-function-arn'
+	);
 	if (typeof invokedFunctionArn !== 'string') {
 		throw new Error(
 			'Did not receive "lambda-runtime-invoked-function-arn" header'
