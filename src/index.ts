@@ -18,7 +18,7 @@ import {
 
 const { stat, readdir, readFile, writeFile } = fs.promises;
 
-const DEFAULT_DENO_VERSION = 'v1.1.1';
+const DEFAULT_DENO_VERSION = 'v1.1.2';
 
 interface Graph {
 	deps: string[];
