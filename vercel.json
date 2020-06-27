@@ -1,9 +1,6 @@
 {
   "public": true,
-  "build": {
-    "env": { "DENO_VERSION": "1.1.2" }
-  },
-  "builds": [
-    { "src": "api/**/*.[jt]s", "use": "https://files-2gfgqyd34.vercel.app/vercel-deno-v0.3.0.tgz" }
-  ]
+  "functions": {
+    "api/**/*.[jt]s": { "runtime": "vercel-deno@0.3.0" }
+  }
 }
