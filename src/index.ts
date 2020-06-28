@@ -123,7 +123,7 @@ export async function build({
 		throw new Error(`Build script failed with exit code ${code}`);
 	}
 
-	const outputFilenames = new Set<string>();
+	const sourceFiles = new Set<string>();
 
 	// Patch the `.graph` files to use file paths beginning with `/var/task`
 	// to hot-fix a Deno issue (https://github.com/denoland/deno/issues/6080).
@@ -138,7 +138,7 @@ export async function build({
 				const relative = dep.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				graph.deps[i] = updated;
-				outputFilenames.add(relative);
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -164,7 +164,7 @@ export async function build({
 				const updated = `file:///var/task/${relative}`;
 				fileInfos[updated] = fileInfos[filename];
 				delete fileInfos[filename];
-				outputFilenames.add(relative);
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -176,7 +176,7 @@ export async function build({
 					const relative = ref.substring(workPathUri.length + 1);
 					const updated = `file:///var/task/${relative}`;
 					refs[i] = updated;
-					outputFilenames.add(relative);
+					sourceFiles.add(relative);
 					needsWrite = true;
 				}
 			}
@@ -186,7 +186,7 @@ export async function build({
 				const updated = `file:///var/task/${relative}`;
 				referencedMap[updated] = refs;
 				delete referencedMap[filename];
-				outputFilenames.add(relative);
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -198,7 +198,7 @@ export async function build({
 					const relative = ref.substring(workPathUri.length + 1);
 					const updated = `file:///var/task/${relative}`;
 					refs[i] = updated;
-					outputFilenames.add(relative);
+					sourceFiles.add(relative);
 					needsWrite = true;
 				}
 			}
@@ -208,7 +208,7 @@ export async function build({
 				const updated = `file:///var/task/${relative}`;
 				exportedModulesMap[updated] = refs;
 				delete exportedModulesMap[filename];
-				outputFilenames.add(relative);
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -219,7 +219,7 @@ export async function build({
 				const relative = ref.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				semanticDiagnosticsPerFile[i] = updated;
-				outputFilenames.add(relative);
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -237,19 +237,17 @@ export async function build({
 		...(await glob('.deno/**/*', workPath)),
 	};
 
-	for (const filename of outputFilenames) {
+	for (const filename of sourceFiles) {
 		outputFiles[filename] = await FileFsRef.fromFsPath({
 			fsPath: join(workPath, filename),
 		});
 	}
 
-	console.log(outputFiles);
 	const output = await createLambda({
 		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided',
 	});
-	console.log(output);
 
 	return { output };
 }
