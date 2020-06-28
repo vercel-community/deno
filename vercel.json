@@ -1,6 +1,6 @@
 {
   "public": true,
-  "builds": [
-    { "src": "api/**/*.{j,t}s", "use": "https://files-17tuarrcz.vercel.app/vercel-dev-runtime-v0.0.0.tgz" }
-  ]
+  "functions": {
+    "api/**/*.[jt]s": { "runtime": "vercel-dev-runtime@0.0.1" }
+  }
 }
