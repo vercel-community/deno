@@ -238,7 +238,9 @@ export async function build({
 		...(await glob('.deno/**/*', workPath)),
 	};
 
+	console.log('Detected source files:');
 	for (const filename of sourceFiles) {
+		console.log(` - ${filename}`);
 		outputFiles[filename] = await FileFsRef.fromFsPath({
 			fsPath: join(workPath, filename),
 		});
