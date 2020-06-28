@@ -8,6 +8,7 @@ import {
 	AnalyzeOptions,
 	BuildOptions,
 	Env,
+  FileFsRef,
 	StartDevServerOptions,
 	StartDevServerResult,
 	createLambda,
@@ -42,6 +43,9 @@ interface BuildInfo {
 	program: Program;
 	version: string;
 }
+
+fs.chmodSync(join(__dirname, 'build.sh'), 0o755);
+fs.chmodSync(join(__dirname, 'bootstrap'), 0o755);
 
 export const version = 3;
 
@@ -221,11 +225,20 @@ export async function build({
 		}
 	}
 
+  const outputFiles = {
+      ...(await glob('.deno/**/*', workPath)),
+      ...(await glob('api/**/*', workPath)),
+      '.runtime.ts': await FileFsRef.fromFsPath({ fsPath: join(workPath, '.runtime.ts') }),
+      bootstrap: await FileFsRef.fromFsPath({ fsPath: join(workPath, 'bootstrap') })
+    }
+
+    console.log(outputFiles);
 	const output = await createLambda({
-		files: await glob('**', workPath),
+		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided',
 	});
+  console.log(output);
 
 	return { output };
 }
