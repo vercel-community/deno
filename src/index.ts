@@ -239,7 +239,7 @@ export async function build({
 	};
 
 	console.log('Detected source files:');
-	for (const filename of sourceFiles) {
+	for (const filename of Array.from(sourceFiles).sort()) {
 		console.log(` - ${filename}`);
 		outputFiles[filename] = await FileFsRef.fromFsPath({
 			fsPath: join(workPath, filename),
