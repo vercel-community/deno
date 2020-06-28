@@ -124,6 +124,7 @@ export async function build({
 	}
 
 	const sourceFiles = new Set<string>();
+	sourceFiles.add(entrypoint);
 
 	// Patch the `.graph` files to use file paths beginning with `/var/task`
 	// to hot-fix a Deno issue (https://github.com/denoland/deno/issues/6080).
