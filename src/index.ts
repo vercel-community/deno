@@ -8,6 +8,8 @@ import {
 	AnalyzeOptions,
 	BuildOptions,
 	Env,
+	Files,
+	FileFsRef,
 	StartDevServerOptions,
 	StartDevServerResult,
 	createLambda,
@@ -42,6 +44,11 @@ interface BuildInfo {
 	program: Program;
 	version: string;
 }
+
+// `chmod()` is required for usage with `vercel-dev-runtime`
+// since file mode is not preserved in Vercel deployments.
+fs.chmodSync(join(__dirname, 'build.sh'), 0o755);
+fs.chmodSync(join(__dirname, 'bootstrap'), 0o755);
 
 export const version = 3;
 
@@ -116,6 +123,9 @@ export async function build({
 		throw new Error(`Build script failed with exit code ${code}`);
 	}
 
+	const sourceFiles = new Set<string>();
+	sourceFiles.add(entrypoint);
+
 	// Patch the `.graph` files to use file paths beginning with `/var/task`
 	// to hot-fix a Deno issue (https://github.com/denoland/deno/issues/6080).
 	const workPathUri = `file://${workPath}`;
@@ -126,10 +136,10 @@ export async function build({
 		for (let i = 0; i < graph.deps.length; i++) {
 			const dep = graph.deps[i];
 			if (dep.startsWith(workPathUri)) {
-				const updated = `file:///var/task${dep.substring(
-					workPathUri.length
-				)}`;
+				const relative = dep.substring(workPathUri.length + 1);
+				const updated = `file:///var/task/${relative}`;
 				graph.deps[i] = updated;
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -151,11 +161,11 @@ export async function build({
 
 		for (const filename of Object.keys(fileInfos)) {
 			if (filename.startsWith(workPathUri)) {
-				const updated = `file:///var/task${filename.substring(
-					workPathUri.length
-				)}`;
+				const relative = filename.substring(workPathUri.length + 1);
+				const updated = `file:///var/task/${relative}`;
 				fileInfos[updated] = fileInfos[filename];
 				delete fileInfos[filename];
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -164,20 +174,20 @@ export async function build({
 			for (let i = 0; i < refs.length; i++) {
 				const ref = refs[i];
 				if (ref.startsWith(workPathUri)) {
-					const updated = `file:///var/task${ref.substring(
-						workPathUri.length
-					)}`;
+					const relative = ref.substring(workPathUri.length + 1);
+					const updated = `file:///var/task/${relative}`;
 					refs[i] = updated;
+					sourceFiles.add(relative);
 					needsWrite = true;
 				}
 			}
 
 			if (filename.startsWith(workPathUri)) {
-				const updated = `file:///var/task${filename.substring(
-					workPathUri.length
-				)}`;
+				const relative = filename.substring(workPathUri.length + 1);
+				const updated = `file:///var/task/${relative}`;
 				referencedMap[updated] = refs;
 				delete referencedMap[filename];
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -186,20 +196,20 @@ export async function build({
 			for (let i = 0; i < refs.length; i++) {
 				const ref = refs[i];
 				if (ref.startsWith(workPathUri)) {
-					const updated = `file:///var/task${ref.substring(
-						workPathUri.length
-					)}`;
+					const relative = ref.substring(workPathUri.length + 1);
+					const updated = `file:///var/task/${relative}`;
 					refs[i] = updated;
+					sourceFiles.add(relative);
 					needsWrite = true;
 				}
 			}
 
 			if (filename.startsWith(workPathUri)) {
-				const updated = `file:///var/task${filename.substring(
-					workPathUri.length
-				)}`;
+				const relative = filename.substring(workPathUri.length + 1);
+				const updated = `file:///var/task/${relative}`;
 				exportedModulesMap[updated] = refs;
 				delete exportedModulesMap[filename];
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -207,10 +217,10 @@ export async function build({
 		for (let i = 0; i < semanticDiagnosticsPerFile.length; i++) {
 			const ref = semanticDiagnosticsPerFile[i];
 			if (ref.startsWith(workPathUri)) {
-				const updated = `file:///var/task${ref.substring(
-					workPathUri.length
-				)}`;
+				const relative = ref.substring(workPathUri.length + 1);
+				const updated = `file:///var/task/${relative}`;
 				semanticDiagnosticsPerFile[i] = updated;
+				sourceFiles.add(relative);
 				needsWrite = true;
 			}
 		}
@@ -221,8 +231,23 @@ export async function build({
 		}
 	}
 
+	const outputFiles: Files = {
+		bootstrap: await FileFsRef.fromFsPath({
+			fsPath: join(workPath, 'bootstrap'),
+		}),
+		...(await glob('.deno/**/*', workPath)),
+	};
+
+	console.log('Detected source files:');
+	for (const filename of Array.from(sourceFiles).sort()) {
+		console.log(` - ${filename}`);
+		outputFiles[filename] = await FileFsRef.fromFsPath({
+			fsPath: join(workPath, filename),
+		});
+	}
+
 	const output = await createLambda({
-		files: await glob('**', workPath),
+		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided',
 	});
