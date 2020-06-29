@@ -2,6 +2,9 @@ import ms from 'https://denopkg.com/TooTallNate/ms';
 import { decode } from 'https://deno.land/std@0.58.0/encoding/utf8.ts';
 import { ServerRequest } from 'https://deno.land/std@0.58.0/http/server.ts';
 
+// Importing relative files works as expected
+import { foo } from '../src/foo.ts';
+
 interface HeadersObject {
 	[name: string]: any;
 }
@@ -53,6 +56,7 @@ export default async (req: ServerRequest) => {
 			build: Deno.build,
 			env: sortObject(Deno.env.toObject()),
 		},
+		foo,
 	};
 	req.respond({
 		status: 200,
