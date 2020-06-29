@@ -1,6 +1,7 @@
 import fs from 'fs';
 import yn from 'yn';
 import { join } from 'path';
+import { tmpdir } from 'os';
 import { spawn } from 'child_process';
 import { Readable } from 'stream';
 import once from '@tootallnate/once';
@@ -18,7 +19,7 @@ import {
 	shouldServe,
 } from '@vercel/build-utils';
 
-const { stat, readdir, readFile, writeFile } = fs.promises;
+const { stat, readdir, readFile, writeFile, unlink } = fs.promises;
 
 const DEFAULT_DENO_VERSION = 'v1.1.2';
 
@@ -290,10 +291,16 @@ export async function startDevServer(
 ): Promise<StartDevServerResult> {
 	const { entrypoint, workPath, meta = {} } = opts;
 
+	const portFile = join(
+		tmpdir(),
+		`vercel-deno-port-${Math.random().toString(32).substring(2)}`
+	);
+
 	const env: typeof process.env = {
 		...process.env,
 		...meta.env,
 		VERCEL_DEV_ENTRYPOINT: join(workPath, entrypoint),
+		VERCEL_DEV_PORT_FILE: portFile,
 	};
 
 	const args: string[] = [
@@ -322,19 +329,58 @@ export async function startDevServer(
 			resolve({ port: Number(d) });
 		});
 	});
+	const onPortFile = waitForPortFile(portFile);
 	const onExit = once.spread<[number, string | null]>(child, 'exit');
-	const result = await Promise.race([onPort, onExit]);
+	const result = await Promise.race([onPort, onPortFile, onExit]);
 	onExit.cancel();
+	onPortFile.cancel();
 
 	if (isPortInfo(result)) {
 		return {
 			port: result.port,
 			pid: child.pid,
 		};
-	} else {
+	} else if (Array.isArray(result)) {
 		// Got "exit" event from child process
 		throw new Error(
 			`Failed to start dev server for "${entrypoint}" (code=${result[0]}, signal=${result[1]})`
 		);
+	} else {
+		throw new Error('Unexpected error');
+	}
+}
+
+export interface CancelablePromise<T> extends Promise<T> {
+	cancel: () => void;
+}
+
+function waitForPortFile(portFile: string) {
+	const opts = { portFile, canceled: false };
+	const promise = waitForPortFile_(
+		opts
+	) as CancelablePromise<PortInfo | void>;
+	promise.cancel = () => {
+		opts.canceled = true;
+	};
+	return promise;
+}
+
+async function waitForPortFile_(opts: {
+	portFile: string;
+	canceled: boolean;
+}): Promise<PortInfo | void> {
+	while (!opts.canceled) {
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		try {
+			const port = Number(await readFile(opts.portFile, 'ascii'));
+			unlink(opts.portFile).catch(err => {
+				console.error('Could not delete port file: %j', opts.portFile);
+			});
+			return { port };
+		} catch (err) {
+			if (err.code !== 'ENOENT') {
+				throw err;
+			}
+		}
 	}
 }

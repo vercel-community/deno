@@ -14,18 +14,26 @@ if (typeof handler !== 'function') {
 	throw new Error('Failed to load handler function');
 }
 
-// Open FD 3, which is where the port number needs to be written
-const portFd = Deno.openSync('/dev/fd/3', { read: false, write: true });
-
 // Spawn HTTP server on ephemeral port
 const s = serve({ port: 0 });
 
-// Write the port number to FD 3
 if (isNetAddr(s.listener.addr)) {
 	const { port } = s.listener.addr;
 	const portBytes = new TextEncoder().encode(String(port));
-	Deno.writeAllSync(portFd, portBytes);
-	Deno.close(portFd.rid);
+
+	try {
+		// Write the port number to FD 3
+		const portFd = Deno.openSync('/dev/fd/3', { read: false, write: true });
+		Deno.writeAllSync(portFd, portBytes);
+		Deno.close(portFd.rid);
+	} catch (err) {
+		// This fallback is necessary for Windows
+		// See: https://github.com/denoland/deno/issues/6305
+		const portFile = Deno.env.get('VERCEL_DEV_PORT_FILE');
+		if (portFile) {
+			await Deno.writeFile(portFile, portBytes);
+		}
+	}
 }
 
 // Serve HTTP requests to handler function
