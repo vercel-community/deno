@@ -19,7 +19,7 @@ import {
 	shouldServe,
 } from '@vercel/build-utils';
 
-const { stat, readdir, readFile, writeFile } = fs.promises;
+const { stat, readdir, readFile, writeFile, unlink } = fs.promises;
 
 const DEFAULT_DENO_VERSION = 'v1.1.2';
 
@@ -373,6 +373,9 @@ async function waitForPortFile_(opts: {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		try {
 			const port = Number(await readFile(opts.portFile, 'ascii'));
+			unlink(opts.portFile).catch(err => {
+				console.error('Could not delete port file: %j', opts.portFile);
+			});
 			return { port };
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
