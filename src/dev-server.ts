@@ -28,11 +28,11 @@ if (isNetAddr(s.listener.addr)) {
 		Deno.writeAllSync(portFd, portBytes);
 		Deno.close(portFd.rid);
 	} catch (err) {
-		console.log(err);
+		// This fallback is necessary for Windows
+		// See: https://github.com/denoland/deno/issues/6305
 		const portFile = Deno.env.get('VERCEL_DEV_PORT_FILE');
 		if (portFile) {
 			await Deno.writeFile(portFile, portBytes);
-			console.log('wrote', port, 'to', portFile);
 		}
 	}
 }
