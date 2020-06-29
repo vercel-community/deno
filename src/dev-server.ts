@@ -17,13 +17,12 @@ if (typeof handler !== 'function') {
 // Spawn HTTP server on ephemeral port
 const s = serve({ port: 0 });
 
-// Write the port number to FD 3
 if (isNetAddr(s.listener.addr)) {
 	const { port } = s.listener.addr;
 	const portBytes = new TextEncoder().encode(String(port));
 
 	try {
-		// Open FD 3, which is where the port number needs to be written
+		// Write the port number to FD 3
 		const portFd = Deno.openSync('/dev/fd/3', { read: false, write: true });
 		Deno.writeAllSync(portFd, portBytes);
 		Deno.close(portFd.rid);
