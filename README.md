@@ -5,15 +5,14 @@
 The Deno Runtime compiles a TypeScript or JavaScript function into a serverless
 function powered by [`deno`](https://deno.land).
 
-
 ## Usage
 
 ```typescript
-import { ServerRequest } from "https://deno.land/std@0.58.0/http/server.ts";
+import { ServerRequest } from 'https://deno.land/std@0.58.0/http/server.ts';
 
 export default async (req: ServerRequest) => {
 	req.respond({ body: `Hello, from Deno v${Deno.version.deno}!` });
-}
+};
 ```
 
 And define the **vercel-deno** runtime in your `vercel.json` file:
@@ -32,12 +31,10 @@ And define the **vercel-deno** runtime in your `vercel.json` file:
 > **Note:** Be sure to place the `vercel.json` file in the _root_ directory of
 > your project.
 
-
 ## Development
 
-The `vercel dev` command is supported, with some caveats:
+The `vercel dev` command is supported on Windows, macOS, and Linux:
 
- - Vercel CLI v19.1.0 or newer is required.
- - Currently supports Linux and macOS. Windows support will be coming soon.
- - Uses the `deno` binary installed on the system (does not download `deno`).
- - Specifying a specific version of Deno via `DENO_VERSION` env var is not supported.
+-   Vercel CLI v19.1.0 or newer is required.
+-   Uses the `deno` binary installed on the system (does not download `deno`).
+-   Specifying a specific version of Deno via `DENO_VERSION` env var is not supported.
