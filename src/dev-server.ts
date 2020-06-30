@@ -38,7 +38,7 @@ if (isNetAddr(s.listener.addr)) {
 
 // Serve HTTP requests to handler function
 for await (const req of s) {
-	handler(req).then((res: Response | void) => {
+	Promise.resolve(handler(req)).then((res: Response | void) => {
 		if (res) {
 			return req.respond(res);
 		}
