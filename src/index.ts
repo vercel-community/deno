@@ -8,7 +8,7 @@ import once from '@tootallnate/once';
 import {
 	AnalyzeOptions,
 	BuildOptions,
-	Env,
+	Config,
 	Files,
 	FileFsRef,
 	StartDevServerOptions,
@@ -21,7 +21,7 @@ import {
 
 const { stat, readdir, readFile, writeFile, unlink } = fs.promises;
 
-const DEFAULT_DENO_VERSION = 'v1.1.2';
+type Env = typeof process.env;
 
 interface Graph {
 	deps: string[];
@@ -46,10 +46,54 @@ interface BuildInfo {
 	version: string;
 }
 
-// `chmod()` is required for usage with `vercel-dev-runtime`
-// since file mode is not preserved in Vercel deployments.
+const DEFAULT_DENO_VERSION = 'v1.1.2';
+
+// `chmod()` is required for usage with `vercel-dev-runtime` since
+// file mode is not preserved in Vercel deployments from the CLI.
 fs.chmodSync(join(__dirname, 'build.sh'), 0o755);
 fs.chmodSync(join(__dirname, 'bootstrap'), 0o755);
+
+function configBool(
+	config: Config,
+	configName: string,
+	envName: string
+): boolean | void {
+	const configVal = config[configName];
+	if (typeof configVal === 'boolean') {
+		return configVal;
+	}
+
+	if (typeof configVal === 'string' || typeof configVal === 'number') {
+		const d = yn(configVal);
+		if (typeof d === 'boolean') {
+			return d;
+		}
+	}
+
+	const envVal = process.env[envName];
+	if (typeof envVal === 'string') {
+		const d = yn(envVal);
+		if (typeof d === 'boolean') {
+			return d;
+		}
+	}
+}
+
+function configString(
+	config: Config,
+	configName: string,
+	envName: string
+): string | void {
+	const configVal = config[configName];
+	if (typeof configVal === 'string') {
+		return configVal;
+	}
+
+	const envVal = process.env[envName];
+	if (typeof envVal === 'string') {
+		return envVal;
+	}
+}
 
 export const version = 3;
 
@@ -71,38 +115,18 @@ export async function build({
 
 	await download(files, workPath, meta);
 
-	let debug = false;
-
-	if (typeof config.debug === 'boolean') {
-		debug = config.debug;
-	} else if (
-		typeof config.debug === 'string' ||
-		typeof config.debug === 'number'
-	) {
-		const d = yn(config.debug);
-		if (typeof d === 'boolean') {
-			debug = d;
-		}
-	} else {
-		const debugEnv = process.env.DEBUG;
-		if (typeof debugEnv === 'string') {
-			const d = yn(debugEnv);
-			if (typeof d === 'boolean') {
-				debug = d;
-			}
-		}
-	}
-
-	let denoVersion = process.env.DENO_VERSION || DEFAULT_DENO_VERSION;
-	if (typeof config.denoVersion === 'string') {
-		denoVersion = config.denoVersion;
-	}
+	const debug = configBool(config, 'debug', 'DEBUG') || false;
+	const unstable =
+		configBool(config, 'denoUnstable', 'DENO_UNSTABLE') || false;
+	let denoVersion =
+		configString(config, 'denoVersion', 'DENO_VERSION') ||
+		DEFAULT_DENO_VERSION;
 
 	if (!denoVersion.startsWith('v')) {
 		denoVersion = `v${denoVersion}`;
 	}
 
-	const env: typeof process.env = {
+	const env: Env = {
 		...process.env,
 		BUILDER: __dirname,
 		ENTRYPOINT: entrypoint,
@@ -111,6 +135,10 @@ export async function build({
 
 	if (debug) {
 		env.DEBUG = '1';
+	}
+
+	if (unstable) {
+		env.DENO_UNSTABLE = '1';
 	}
 
 	const builderPath = join(__dirname, 'build.sh');
@@ -247,10 +275,17 @@ export async function build({
 		});
 	}
 
+	const lambdaEnv: { [name: string]: string } = {};
+
+	if (unstable) {
+		lambdaEnv.DENO_UNSTABLE = '1';
+	}
+
 	const output = await createLambda({
 		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided',
+		environment: lambdaEnv,
 	});
 
 	return { output };
@@ -296,7 +331,7 @@ export async function startDevServer(
 		`vercel-deno-port-${Math.random().toString(32).substring(2)}`
 	);
 
-	const env: typeof process.env = {
+	const env: Env = {
 		...process.env,
 		...meta.env,
 		VERCEL_DEV_ENTRYPOINT: join(workPath, entrypoint),
@@ -373,7 +408,7 @@ async function waitForPortFile_(opts: {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		try {
 			const port = Number(await readFile(opts.portFile, 'ascii'));
-			unlink(opts.portFile).catch(err => {
+			unlink(opts.portFile).catch((err) => {
 				console.error('Could not delete port file: %j', opts.portFile);
 			});
 			return { port };
