@@ -9,6 +9,6 @@
     "sourceMap": true,
     "declaration": true
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", "./runtime.ts", "./dev-server.ts"]
+  "include": ["./index.ts"],
+  "exclude": ["node_modules"]
 }
