@@ -36,7 +36,7 @@ cp ${DEBUG:+-v} "$BUILDER/bootstrap" "bootstrap"
 cp ${DEBUG:+-v} "$BUILDER/runtime.ts" ".runtime.ts"
 
 echo "Caching imports for \"$ENTRYPOINT\"…"
-deno cache $unstable_flag "$ENTRYPOINT" ".runtime.ts"
+deno cache $unstable_flag ".runtime.ts" "$ENTRYPOINT"
 
 # Move the `gen` files to match AWS `/var/task`
 mkdir -p${DEBUG:+v} "$DENO_DIR/gen/file/var"
