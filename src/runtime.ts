@@ -50,12 +50,11 @@ async function processEvents(): Promise<void> {
 
 			const data = JSON.parse(event.body);
 			const input = new Deno.Buffer(base64.toUint8Array(data.body || ''));
-			const output = new Deno.Buffer();
-			output.grow(1049000);
+			const output = new Deno.Buffer(new Uint8Array(6000000)); // 6 MB
 
 			const req = new ServerRequest();
 			// req.conn
-			req.r = new BufReader(input);
+			req.r = new BufReader(input, input.length);
 			req.method = data.method;
 			req.url = data.path;
 			req.proto = 'HTTP/1.1';
@@ -81,7 +80,7 @@ async function processEvents(): Promise<void> {
 				throw responseError;
 			}
 
-			const bufr = new BufReader(output);
+			const bufr = new BufReader(output, output.length);
 			const tp = new TextProtoReader(bufr);
 			const firstLine = await tp.readLine(); // e.g. "HTTP/1.1 200 OK"
 			if (firstLine === null) throw new Deno.errors.UnexpectedEof();
