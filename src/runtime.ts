@@ -54,7 +54,7 @@ async function processEvents(): Promise<void> {
 
 			const req = new ServerRequest();
 			// req.conn
-			req.r = new BufReader(input);
+			req.r = new BufReader(input, input.length);
 			req.method = data.method;
 			req.url = data.path;
 			req.proto = 'HTTP/1.1';
@@ -80,7 +80,7 @@ async function processEvents(): Promise<void> {
 				throw responseError;
 			}
 
-			const bufr = new BufReader(output);
+			const bufr = new BufReader(output, output.length);
 			const tp = new TextProtoReader(bufr);
 			const firstLine = await tp.readLine(); // e.g. "HTTP/1.1 200 OK"
 			if (firstLine === null) throw new Deno.errors.UnexpectedEof();
