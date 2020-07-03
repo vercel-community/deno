@@ -31,6 +31,18 @@ And define the **vercel-deno** runtime in your `vercel.json` file:
 > **Note:** Be sure to place the `vercel.json` file in the _root_ directory of
 > your project.
 
+## Configuration
+
+There are a few [build environment
+variables](https://vercel.com/docs/configuration#project/build-env) that you
+may configure for your serverless functions:
+
+| Name            | Description                                                                               | Default |
+| --------------- | ----------------------------------------------------------------------------------------- | ------- |
+| `DEBUG`         | Enables additional logging during build-time.                                             | `false` |
+| `DENO_UNSTABLE` | Passes the `--unstable` flag to `deno cache` (at build-time) and `deno run` (at runtime). | `false` |
+| `DENO_VERSION`  | Version of `deno` that the serverless function will use.                                  | `1.1.2` |
+
 ## Development
 
 The `vercel dev` command is supported on Windows, macOS, and Linux:
