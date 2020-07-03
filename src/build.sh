@@ -3,6 +3,12 @@ set -euo pipefail
 
 export NO_COLOR=1
 
+unstable_flag=
+if [ -n "${DENO_UNSTABLE-}" ]; then
+	unstable_flag="--unstable"
+	unset DENO_UNSTABLE
+fi
+
 # Prepare for `deno.zip` download from GitHub Releases
 ROOT_DIR="$(pwd)"
 export DENO_DIR="$ROOT_DIR/.deno"
@@ -30,7 +36,7 @@ cp ${DEBUG:+-v} "$BUILDER/bootstrap" "bootstrap"
 cp ${DEBUG:+-v} "$BUILDER/runtime.ts" ".runtime.ts"
 
 echo "Caching imports for \"$ENTRYPOINT\"…"
-deno cache "$ENTRYPOINT" ".runtime.ts"
+deno cache $unstable_flag ".runtime.ts" "$ENTRYPOINT"
 
 # Move the `gen` files to match AWS `/var/task`
 mkdir -p${DEBUG:+v} "$DENO_DIR/gen/file/var"

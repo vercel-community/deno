@@ -1,11 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 cd "$LAMBDA_TASK_ROOT"
+
+unstable_flag=
+if [ -n "${DENO_UNSTABLE-}" ]; then
+	unstable_flag="--unstable"
+	unset DENO_UNSTABLE
+fi
+
 export DENO_DIR="$LAMBDA_TASK_ROOT/.deno"
 export PATH="$DENO_DIR/bin:$PATH"
 export NO_COLOR=1
 export HOME="$(eval echo "~")"
 exec deno run \
+	$unstable_flag \
 	--allow-env \
 	--allow-net \
 	--allow-read \
