@@ -56,6 +56,7 @@ fs.chmodSync(join(__dirname, 'bootstrap'), 0o755);
 function configBool(
 	config: Config,
 	configName: string,
+	env: Env,
 	envName: string
 ): boolean | void {
 	const configVal = config[configName];
@@ -70,7 +71,7 @@ function configBool(
 		}
 	}
 
-	const envVal = process.env[envName];
+	const envVal = env[envName];
 	if (typeof envVal === 'string') {
 		const d = yn(envVal);
 		if (typeof d === 'boolean') {
@@ -82,6 +83,7 @@ function configBool(
 function configString(
 	config: Config,
 	configName: string,
+	env: Env,
 	envName: string
 ): string | void {
 	const configVal = config[configName];
@@ -89,7 +91,7 @@ function configString(
 		return configVal;
 	}
 
-	const envVal = process.env[envName];
+	const envVal = env[envName];
 	if (typeof envVal === 'string') {
 		return envVal;
 	}
@@ -115,11 +117,12 @@ export async function build({
 
 	await download(files, workPath, meta);
 
-	const debug = configBool(config, 'debug', 'DEBUG') || false;
+	const debug = configBool(config, 'debug', process.env, 'DEBUG') || false;
 	const unstable =
-		configBool(config, 'denoUnstable', 'DENO_UNSTABLE') || false;
+		configBool(config, 'denoUnstable', process.env, 'DENO_UNSTABLE') ||
+		false;
 	let denoVersion =
-		configString(config, 'denoVersion', 'DENO_VERSION') ||
+		configString(config, 'denoVersion', process.env, 'DENO_VERSION') ||
 		DEFAULT_DENO_VERSION;
 
 	if (!denoVersion.startsWith('v')) {
@@ -321,10 +324,19 @@ function isReadable(v: any): v is Readable {
 	return v && v.readable === true;
 }
 
-export async function startDevServer(
-	opts: StartDevServerOptions
-): Promise<StartDevServerResult> {
-	const { entrypoint, workPath, meta = {} } = opts;
+export async function startDevServer({
+	entrypoint,
+	workPath,
+	config,
+	meta = {},
+}: StartDevServerOptions): Promise<StartDevServerResult> {
+	const unstable =
+		configBool(
+			config,
+			'denoUnstable',
+			meta.buildEnv || {},
+			'DENO_UNSTABLE'
+		) || false;
 
 	const portFile = join(
 		tmpdir(),
@@ -338,14 +350,19 @@ export async function startDevServer(
 		VERCEL_DEV_PORT_FILE: portFile,
 	};
 
-	const args: string[] = [
-		'run',
+	const args: string[] = ['run'];
+
+	if (unstable) {
+		args.push('--unstable');
+	}
+
+	args.push(
 		'--allow-env',
 		'--allow-net',
 		'--allow-read',
 		'--allow-write',
-		join(__dirname, 'dev-server.ts'),
-	];
+		join(__dirname, 'dev-server.ts')
+	);
 
 	const child = spawn('deno', args, {
 		cwd: workPath,
