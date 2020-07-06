@@ -41,7 +41,7 @@ may configure for your serverless functions:
 | --------------- | ----------------------------------------------------------------------------------------- | ------- |
 | `DEBUG`         | Enables additional logging during build-time.                                             | `false` |
 | `DENO_UNSTABLE` | Passes the `--unstable` flag to `deno cache` (at build-time) and `deno run` (at runtime). | `false` |
-| `DENO_VERSION`  | Version of `deno` that the serverless function will use.                                  | `1.1.2` |
+| `DENO_VERSION`  | Version of `deno` that the serverless function will use.                                  | `1.1.3` |
 
 ## Development
 
