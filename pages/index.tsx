@@ -17,7 +17,7 @@ export default ({ examples }) => {
 				<h3>Examples:</h3>
 				<ul>
 					{examples.map((example) => (
-						<li>
+						<li key={example}>
 							<Link href={`/api/${example}`}>
 								<a>{example}</a>
 							</Link>
