@@ -21,7 +21,7 @@ And define the **vercel-deno** runtime in your `vercel.json` file:
 {
 	"version": 2,
 	"functions": {
-		"api/**/*.{j,t}s": { "runtime": "vercel-deno@0.3.2" }
+		"api/**/*.{j,t}s": { "runtime": "vercel-deno@0.4.2" }
 	}
 }
 ```
