@@ -15,7 +15,7 @@ if (typeof handler !== 'function') {
 }
 
 // Spawn HTTP server on ephemeral port
-const s = serve({ port: 0 });
+const s = serve({ hostname: '127.0.0.1', port: 0 });
 
 if (isNetAddr(s.listener.addr)) {
 	const { port } = s.listener.addr;
