@@ -46,6 +46,7 @@ interface BuildInfo {
 	version: string;
 }
 
+const TMP = tmpdir();
 const DEFAULT_DENO_VERSION = 'v1.1.3';
 
 // `chmod()` is required for usage with `vercel-dev-runtime` since
@@ -339,7 +340,7 @@ export async function startDevServer({
 		) || false;
 
 	const portFile = join(
-		tmpdir(),
+		TMP,
 		`vercel-deno-port-${Math.random().toString(32).substring(2)}`
 	);
 
