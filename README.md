@@ -7,6 +7,8 @@ function powered by [`deno`](https://deno.land).
 
 ## Usage
 
+Create a file called `api/hello.ts` with the following contents:
+
 ```typescript
 import { ServerRequest } from 'https://deno.land/std@0.58.0/http/server.ts';
 
@@ -15,7 +17,8 @@ export default async (req: ServerRequest) => {
 };
 ```
 
-And define the **vercel-deno** runtime in your `vercel.json` file:
+Next, define the **vercel-deno** runtime within the "functions" object in your
+`vercel.json` file:
 
 ```json
 {
