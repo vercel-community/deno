@@ -12,7 +12,7 @@ export async function getStaticProps() {
 export default ({ examples }) => {
 	return (
 		<div>
-			<p>Hello Deno, powered by Vercel!</p>
+			<p>Hello from Deno, powered by Vercel!</p>
 			<div>
 				<h3>Examples:</h3>
 				<ul>
