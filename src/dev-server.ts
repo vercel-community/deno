@@ -30,10 +30,11 @@ if (isNetAddr(s.listener.addr)) {
 		// This fallback is necessary for Windows
 		// See: https://github.com/denoland/deno/issues/6305
 		const portFile = Deno.env.get('VERCEL_DEV_PORT_FILE');
-		Deno.env.delete('VERCEL_DEV_PORT_FILE');
 		if (portFile) {
 			await Deno.writeFile(portFile, portBytes);
 		}
+	} finally {
+		Deno.env.delete('VERCEL_DEV_PORT_FILE');
 	}
 }
 
