@@ -40,12 +40,12 @@ There are a few [build environment
 variables](https://vercel.com/docs/configuration#project/build-env) that you
 may configure for your serverless functions:
 
-| Name            | Description                                                                               | Default |
-| --------------- | ----------------------------------------------------------------------------------------- | ------- |
-| `DEBUG`         | Enables additional logging during build-time.                                             | `false` |
-| `DENO_TSCONFIG` | Passes the `--config` flag to specify a `tsconfig.json` file that Deno will use.          | None    |
-| `DENO_UNSTABLE` | Passes the `--unstable` flag to `deno cache` (at build-time) and `deno run` (at runtime). | `false` |
-| `DENO_VERSION`  | Version of `deno` that the serverless function will use.                                  | `1.2.0` |
+| Name            | Description                                                   | Default |
+| --------------- | --------------------------------------------------------------| ------- |
+| `DEBUG`         | Enables additional logging during build-time.                 | `false` |
+| `DENO_TSCONFIG` | Passes the [`--config`](https://deno.land/manual/getting_started/command_line_interface#cache-and-compilation-flags) flag to specify a `tsconfig.json` file that Deno will use. | None |
+| `DENO_UNSTABLE` | Passes the [`--unstable`](https://deno.land/manual/getting_started/command_line_interface#cache-and-compilation-flags) flag to `deno cache` (at build-time) and `deno run` (at runtime). | `false` |
+| `DENO_VERSION`  | Version of `deno` that the serverless function will use.      | `1.2.0` |
 
 ## Development
 
