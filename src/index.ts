@@ -125,6 +125,8 @@ export async function build({
 	let denoVersion =
 		configString(config, 'denoVersion', process.env, 'DENO_VERSION') ||
 		DEFAULT_DENO_VERSION;
+	
+	const denoTsConfig = configString(config, 'tsconfig', process.env, 'DENO_TSCONFIG');
 
 	if (!denoVersion.startsWith('v')) {
 		denoVersion = `v${denoVersion}`;
@@ -143,6 +145,10 @@ export async function build({
 
 	if (unstable) {
 		env.DENO_UNSTABLE = '1';
+	}
+
+	if (denoTsConfig) {
+		env.DENO_TSCONFIG = denoTsConfig;
 	}
 
 	const builderPath = join(__dirname, 'build.sh');
@@ -272,6 +278,11 @@ export async function build({
 	};
 
 	console.log('Detected source files:');
+
+	if (denoTsConfig) {
+		sourceFiles.add(denoTsConfig);
+	}
+	
 	for (const filename of Array.from(sourceFiles).sort()) {
 		console.log(` - ${filename}`);
 		outputFiles[filename] = await FileFsRef.fromFsPath({
@@ -283,6 +294,10 @@ export async function build({
 
 	if (unstable) {
 		lambdaEnv.DENO_UNSTABLE = '1';
+	}
+
+	if(denoTsConfig) {
+		lambdaEnv.DENO_TSCONFIG = denoTsConfig;
 	}
 
 	const output = await createLambda({
@@ -339,6 +354,8 @@ export async function startDevServer({
 			'DENO_UNSTABLE'
 		) || false;
 
+	const denoTsconfig = configString(config, 'tsconfig', meta.buildEnv || {}, 'DENO_TSCONFIG');
+
 	const portFile = join(
 		TMP,
 		`vercel-deno-port-${Math.random().toString(32).substring(2)}`
@@ -352,6 +369,10 @@ export async function startDevServer({
 	};
 
 	const args: string[] = ['run'];
+
+	if (denoTsconfig) {
+		args.push("--config", denoTsconfig);
+	}
 
 	if (unstable) {
 		args.push('--unstable');
