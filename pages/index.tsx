@@ -5,7 +5,9 @@ import { basename, extname, join } from 'path';
 export async function getStaticProps() {
 	const apiDir = join(process.cwd(), 'api');
 	const apiFiles = await fs.promises.readdir(apiDir);
-	const examples = apiFiles.map((f) => basename(f, extname(f)));
+	const examples = apiFiles
+		.filter((f) => f.endsWith('.ts') || f.endsWith('.js'))
+		.map((f) => basename(f, extname(f)));
 	return { props: { examples } };
 }
 
