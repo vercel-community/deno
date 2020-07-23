@@ -277,7 +277,10 @@ export async function build({
 		...(await glob('.deno/**/*', workPath)),
 	};
 
-	console.log('Detected source files:');
+	if (denoTsConfig) {
+		sourceFiles.add(denoTsConfig);
+	}
+	
 	for (const filename of Array.from(sourceFiles).sort()) {
 		console.log(` - ${filename}`);
 		outputFiles[filename] = await FileFsRef.fromFsPath({
