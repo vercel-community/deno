@@ -126,7 +126,7 @@ export async function build({
 		configString(config, 'denoVersion', process.env, 'DENO_VERSION') ||
 		DEFAULT_DENO_VERSION;
 	
-	let denoTsConfig = configString(config, 'denoTsconfig', process.env, 'DENO_TSCONFIG') || undefined;
+	const denoTsConfig = configString(config, 'tsconfig', process.env, 'DENO_TSCONFIG');
 
 	if (!denoVersion.startsWith('v')) {
 		denoVersion = `v${denoVersion}`;
@@ -147,7 +147,7 @@ export async function build({
 		env.DENO_UNSTABLE = '1';
 	}
 
-	if(denoTsConfig) {
+	if (denoTsConfig) {
 		env.DENO_TSCONFIG = denoTsConfig;
 	}
 
@@ -349,7 +349,7 @@ export async function startDevServer({
 			'DENO_UNSTABLE'
 		) || false;
 
-	const denoTsconfig = configString(config, 'denoTsconfig', meta.buildEnv || {}, 'DENO_TSCONFIG') || undefined;
+	const denoTsconfig = configString(config, 'tsconfig', meta.buildEnv || {}, 'DENO_TSCONFIG');
 
 	const portFile = join(
 		TMP,
@@ -365,7 +365,7 @@ export async function startDevServer({
 
 	const args: string[] = ['run'];
 
-	if(denoTsconfig) {
+	if (denoTsconfig) {
 		args.push("--config", denoTsconfig);
 	}
 
@@ -380,7 +380,7 @@ export async function startDevServer({
 		'--allow-write',
 		join(__dirname, 'dev-server.ts')
 	);
-	
+
 	const child = spawn('deno', args, {
 		cwd: workPath,
 		env,
