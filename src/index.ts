@@ -125,8 +125,13 @@ export async function build({
 	let denoVersion =
 		configString(config, 'denoVersion', process.env, 'DENO_VERSION') ||
 		DEFAULT_DENO_VERSION;
-	
-	const denoTsConfig = configString(config, 'tsconfig', process.env, 'DENO_TSCONFIG');
+
+	const denoTsConfig = configString(
+		config,
+		'tsconfig',
+		process.env,
+		'DENO_TSCONFIG'
+	);
 
 	if (!denoVersion.startsWith('v')) {
 		denoVersion = `v${denoVersion}`;
@@ -282,7 +287,7 @@ export async function build({
 	if (denoTsConfig) {
 		sourceFiles.add(denoTsConfig);
 	}
-	
+
 	for (const filename of Array.from(sourceFiles).sort()) {
 		console.log(` - ${filename}`);
 		outputFiles[filename] = await FileFsRef.fromFsPath({
@@ -296,7 +301,7 @@ export async function build({
 		lambdaEnv.DENO_UNSTABLE = '1';
 	}
 
-	if(denoTsConfig) {
+	if (denoTsConfig) {
 		lambdaEnv.DENO_TSCONFIG = denoTsConfig;
 	}
 
@@ -354,7 +359,12 @@ export async function startDevServer({
 			'DENO_UNSTABLE'
 		) || false;
 
-	const denoTsconfig = configString(config, 'tsconfig', meta.buildEnv || {}, 'DENO_TSCONFIG');
+	const denoTsconfig = configString(
+		config,
+		'tsconfig',
+		meta.buildEnv || {},
+		'DENO_TSCONFIG'
+	);
 
 	const portFile = join(
 		TMP,
@@ -371,7 +381,7 @@ export async function startDevServer({
 	const args: string[] = ['run'];
 
 	if (denoTsconfig) {
-		args.push("--config", denoTsconfig);
+		args.push('--config', denoTsconfig);
 	}
 
 	if (unstable) {
