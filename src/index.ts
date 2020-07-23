@@ -277,6 +277,8 @@ export async function build({
 		...(await glob('.deno/**/*', workPath)),
 	};
 
+	console.log('Detected source files:');
+
 	if (denoTsConfig) {
 		sourceFiles.add(denoTsConfig);
 	}
@@ -295,7 +297,7 @@ export async function build({
 	}
 
 	if(denoTsConfig) {
-		lambdaEnv.DENO_TSCONFIG = <string> env.DENO_TSCONFIG;
+		lambdaEnv.DENO_TSCONFIG = denoTsConfig;
 	}
 
 	const output = await createLambda({
