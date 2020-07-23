@@ -8,12 +8,19 @@ if [ -n "${DENO_UNSTABLE-}" ]; then
 	unset DENO_UNSTABLE
 fi
 
+tsconfig_flag=
+if [ -n "${DENO_TSCONFIG}" ]; then
+	tsconfig_flag="--config ${DENO_TSCONFIG}"
+	unset DENO_TSCONFIG;
+fi
+
 export DENO_DIR="$LAMBDA_TASK_ROOT/.deno"
 export PATH="$DENO_DIR/bin:$PATH"
 export NO_COLOR=1
 export HOME="$(eval echo "~")"
 exec deno run \
 	$unstable_flag \
+	$tsconfig_flag \
 	--allow-env \
 	--allow-net \
 	--allow-read \
