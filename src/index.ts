@@ -282,12 +282,32 @@ export async function build({
 		...(await glob('.deno/**/*', workPath)),
 	};
 
-	console.log('Detected source files:');
-
 	if (denoTsConfig) {
 		sourceFiles.add(denoTsConfig);
 	}
 
+	if(config.includeFiles) {
+
+		const includeFiles =
+		   typeof config.includeFiles === 'string'
+		  	? [config.includeFiles]
+			: config.includeFiles;
+		
+		console.log("Detected additional files");
+		for(const pattern of includeFiles) {
+			console.log(` - ${pattern}`);
+			const files = await glob(pattern, workPath);
+
+			for(const filename of Object.keys(files)) {
+				if(!sourceFiles.has(filename)) {
+					console.log(`   - ${filename}`);
+					sourceFiles.add(filename);
+				}
+			}
+		}
+	}
+
+	console.log('Detected source files:');
 	for (const filename of Array.from(sourceFiles).sort()) {
 		console.log(` - ${filename}`);
 		outputFiles[filename] = await FileFsRef.fromFsPath({
