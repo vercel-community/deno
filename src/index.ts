@@ -296,14 +296,7 @@ export async function build({
 		console.log("Detected additional files");
 		for(const pattern of includeFiles) {
 			console.log(` - ${pattern}`);
-			const files = await glob(pattern, workPath);
-
-			for(const filename of Object.keys(files)) {
-				if(!sourceFiles.has(filename)) {
-					console.log(`   - ${filename}`);
-					sourceFiles.add(filename);
-				}
-			}
+			Object.assign(outputFiles, await glob(pattern, workPath));
 		}
 	}
 
