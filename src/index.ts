@@ -286,6 +286,8 @@ export async function build({
 		sourceFiles.add(denoTsConfig);
 	}
 
+	console.log('Detected source files:');
+
 	if(config.includeFiles) {
 
 		const includeFiles =
@@ -293,14 +295,16 @@ export async function build({
 		  	? [config.includeFiles]
 			: config.includeFiles;
 		
-		console.log("Detected additional files");
+		console.log("Including additional files:");
 		for(const pattern of includeFiles) {
-			console.log(` - ${pattern}`);
-			Object.assign(outputFiles, await glob(pattern, workPath));
+			const matches = await glob(pattern, workPath);
+			Object.assign(outputFiles, matches);
+			for (const name of Object.keys(matches)) {
+				console.log(` - ${name}`);
+			}
 		}
 	}
-
-	console.log('Detected source files:');
+	
 	for (const filename of Array.from(sourceFiles).sort()) {
 		console.log(` - ${filename}`);
 		outputFiles[filename] = await FileFsRef.fromFsPath({
