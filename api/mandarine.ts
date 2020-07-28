@@ -8,9 +8,10 @@ import {
 
 @Controller()
 export class MyController {
-
 	public getFileMessage(): string {
-		return JSON.parse(new TextDecoder().decode(Deno.readFileSync('./api/myjson.json'))).message;
+		return JSON.parse(
+			new TextDecoder().decode(Deno.readFileSync('./api/myjson.json'))
+		).message;
 	}
 
 	@GET('/api/mandarine/')

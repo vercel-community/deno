@@ -287,29 +287,29 @@ export async function build({
 	}
 
 	console.log('Detected source files:');
-
-	if(config.includeFiles) {
-
-		const includeFiles =
-		   typeof config.includeFiles === 'string'
-		  	? [config.includeFiles]
-			: config.includeFiles;
-		
-		console.log("Including additional files:");
-		for(const pattern of includeFiles) {
-			const matches = await glob(pattern, workPath);
-			Object.assign(outputFiles, matches);
-			for (const name of Object.keys(matches)) {
-				console.log(` - ${name}`);
-			}
-		}
-	}
-	
 	for (const filename of Array.from(sourceFiles).sort()) {
 		console.log(` - ${filename}`);
 		outputFiles[filename] = await FileFsRef.fromFsPath({
 			fsPath: join(workPath, filename),
 		});
+	}
+
+	if (config.includeFiles) {
+		const includeFiles =
+			typeof config.includeFiles === 'string'
+				? [config.includeFiles]
+				: config.includeFiles;
+
+		console.log('Including additional files:');
+		for (const pattern of includeFiles) {
+			const matches = await glob(pattern, workPath);
+			for (const name of Object.keys(matches)) {
+				if (!outputFiles[name]) {
+					console.log(` - ${name}`);
+					outputFiles[name] = matches[name];
+				}
+			}
+		}
 	}
 
 	const lambdaEnv: { [name: string]: string } = {};
