@@ -8,14 +8,19 @@ import {
 
 @Controller()
 export class MyController {
+
+	public getFileMessage(): string {
+		return JSON.parse(new TextDecoder().decode(Deno.readFileSync('./api/myjson.json'))).message;
+	}
+
 	@GET('/api/mandarine/')
 	public httpHandler() {
-		return 'Welcome to MandarineTS Framework!';
+		return this.getFileMessage();
 	}
 
 	@GET('/api/mandarine')
 	public httpHandler2() {
-		return 'Welcome to MandarineTS Framework!';
+		return this.getFileMessage();
 	}
 }
 
