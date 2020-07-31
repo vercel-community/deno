@@ -4,7 +4,7 @@
   "description": "Vercel Runtime for Deno serverless functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "author": "Nathan Rajlich <nate@zeit.co>",
+  "author": "Nathan Rajlich <nate@vercel.com>",
   "license": "MIT",
   "homepage": "https://github.com/TooTallNate/vercel-deno",
   "repository": {
