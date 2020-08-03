@@ -1,10 +1,8 @@
-// myFile.ts
-
 import {
 	MandarineCore,
 	Controller,
 	GET,
-} from 'https://deno.land/x/mandarinets@master/mod.ts';
+} from 'https://deno.land/x/mandarinets@v1.3.0/mod.ts';
 
 @Controller()
 export class MyController {
@@ -14,16 +12,10 @@ export class MyController {
 		).message;
 	}
 
-	@GET('/api/mandarine/')
-	public httpHandler() {
-		return this.getFileMessage();
-	}
-
 	@GET('/api/mandarine')
-	public httpHandler2() {
+	public httpHandler() {
 		return this.getFileMessage();
 	}
 }
 
-let deploymentContext = new MandarineCore().MVC();
-export default deploymentContext.handle;
+export default new MandarineCore().MVC().handle;
