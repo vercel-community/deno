@@ -11,7 +11,7 @@ function powered by [Deno](https://deno.land), running on
 Create a file called `api/hello.ts` with the following contents:
 
 ```typescript
-import { ServerRequest } from 'https://deno.land/std@0.62.0/http/server.ts';
+import { ServerRequest } from 'https://deno.land/std@0.64.0/http/server.ts';
 
 export default async (req: ServerRequest) => {
 	req.respond({ body: `Hello, from Deno v${Deno.version.deno}!` });
@@ -45,7 +45,7 @@ may configure for your serverless functions:
 | `DEBUG`         | Enables additional logging during build-time.                                                                                                                                            | `false` |
 | `DENO_TSCONFIG` | Passes the [`--config`](https://deno.land/manual/getting_started/command_line_interface#cache-and-compilation-flags) flag to specify a `tsconfig.json` file that Deno will use.          | None    |
 | `DENO_UNSTABLE` | Passes the [`--unstable`](https://deno.land/manual/getting_started/command_line_interface#cache-and-compilation-flags) flag to `deno cache` (at build-time) and `deno run` (at runtime). | `false` |
-| `DENO_VERSION`  | Version of `deno` that the serverless function will use.                                                                                                                                 | `1.2.2` |
+| `DENO_VERSION`  | Version of `deno` that the serverless function will use.                                                                                                                                 | `1.2.3` |
 
 ## Development
 
