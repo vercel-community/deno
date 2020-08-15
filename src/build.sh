@@ -10,7 +10,7 @@ if [ -n "${DENO_UNSTABLE-}" ]; then
 fi
 
 tsconfig_flag=
-if [ -n "${DENO_TSCONFIG}" ]; then
+if [ -n "${DENO_TSCONFIG-}" ]; then
 	echo "Using tsconfig: ${DENO_TSCONFIG}"
 	tsconfig_flag="-c ${DENO_TSCONFIG}"
 	unset DENO_TSCONFIG

@@ -9,7 +9,7 @@ if [ -n "${DENO_UNSTABLE-}" ]; then
 fi
 
 tsconfig_flag=
-if [ -n "${DENO_TSCONFIG}" ]; then
+if [ -n "${DENO_TSCONFIG-}" ]; then
 	tsconfig_flag="--config ${DENO_TSCONFIG}"
 	unset DENO_TSCONFIG;
 fi
