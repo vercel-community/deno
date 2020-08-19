@@ -325,7 +325,7 @@ export async function build({
 	const output = await createLambda({
 		files: outputFiles,
 		handler: entrypoint,
-		runtime: 'provided',
+		runtime: 'provided.al2',
 		environment: lambdaEnv,
 	});
 
