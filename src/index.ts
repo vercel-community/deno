@@ -179,7 +179,7 @@ export async function build({
 		const graph: Graph = JSON.parse(await readFile(file, 'utf8'));
 		for (let i = 0; i < graph.deps.length; i++) {
 			const dep = graph.deps[i];
-			if (dep.startsWith(workPathUri)) {
+			if (typeof dep === 'string' && dep.startsWith(workPathUri)) {
 				const relative = dep.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				graph.deps[i] = updated;
@@ -204,7 +204,7 @@ export async function build({
 		} = buildInfo.program;
 
 		for (const filename of Object.keys(fileInfos)) {
-			if (filename.startsWith(workPathUri)) {
+			if (typeof filename === 'string' && filename.startsWith(workPathUri)) {
 				const relative = filename.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				fileInfos[updated] = fileInfos[filename];
@@ -217,7 +217,7 @@ export async function build({
 		for (const [filename, refs] of Object.entries(referencedMap)) {
 			for (let i = 0; i < refs.length; i++) {
 				const ref = refs[i];
-				if (ref.startsWith(workPathUri)) {
+				if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
 					const relative = ref.substring(workPathUri.length + 1);
 					const updated = `file:///var/task/${relative}`;
 					refs[i] = updated;
@@ -226,7 +226,7 @@ export async function build({
 				}
 			}
 
-			if (filename.startsWith(workPathUri)) {
+			if (typeof filename === 'string' && filename.startsWith(workPathUri)) {
 				const relative = filename.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				referencedMap[updated] = refs;
@@ -239,7 +239,7 @@ export async function build({
 		for (const [filename, refs] of Object.entries(exportedModulesMap)) {
 			for (let i = 0; i < refs.length; i++) {
 				const ref = refs[i];
-				if (ref.startsWith(workPathUri)) {
+				if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
 					const relative = ref.substring(workPathUri.length + 1);
 					const updated = `file:///var/task/${relative}`;
 					refs[i] = updated;
@@ -248,7 +248,7 @@ export async function build({
 				}
 			}
 
-			if (filename.startsWith(workPathUri)) {
+			if (typeof filename === 'string' && filename.startsWith(workPathUri)) {
 				const relative = filename.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				exportedModulesMap[updated] = refs;
@@ -260,7 +260,7 @@ export async function build({
 
 		for (let i = 0; i < semanticDiagnosticsPerFile.length; i++) {
 			const ref = semanticDiagnosticsPerFile[i];
-			if (ref.startsWith(workPathUri)) {
+			if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
 				const relative = ref.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				semanticDiagnosticsPerFile[i] = updated;
