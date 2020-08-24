@@ -21,8 +21,5 @@ export HOME="$(eval echo "~")"
 exec deno run \
 	$unstable_flag \
 	$tsconfig_flag \
-	--allow-env \
-	--allow-net \
-	--allow-read \
-	--allow-write \
+	--allow-all \
 	".runtime.ts"
