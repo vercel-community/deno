@@ -1,10 +1,10 @@
 import * as base64 from 'https://deno.land/x/base64/mod.ts';
-import { TextProtoReader } from 'https://deno.land/std@0.66.0/textproto/mod.ts';
-import { BufReader, BufWriter } from 'https://deno.land/std@0.66.0/io/bufio.ts';
+import { TextProtoReader } from 'https://deno.land/std@0.67.0/textproto/mod.ts';
+import { BufReader, BufWriter } from 'https://deno.land/std@0.67.0/io/bufio.ts';
 import {
 	ServerRequest,
 	Response,
-} from 'https://deno.land/std@0.66.0/http/server.ts';
+} from 'https://deno.land/std@0.67.0/http/server.ts';
 import { Context } from 'https://denopkg.com/DefinitelyTyped/DefinitelyTyped/types/aws-lambda/handler.d.ts';
 
 type Handler = (req: ServerRequest) => Promise<Response | void>;
