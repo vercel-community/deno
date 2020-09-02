@@ -5,6 +5,10 @@ import { ServerRequest } from 'https://deno.land/std@0.67.0/http/server.ts';
 // Importing relative files works as expected
 import { foo } from '../src/foo.ts';
 
+interface StringObject {
+	[name: string]: string;
+}
+
 interface HeadersObject {
 	[name: string]: any;
 }
@@ -15,6 +19,17 @@ function headersToObject(headers: Headers): HeadersObject {
 	const obj: HeadersObject = {};
 	for (const [name, value] of headers.entries()) {
 		obj[name] = value;
+	}
+	return obj;
+}
+
+function urlToObject(url: URL): StringObject {
+	const obj: HeadersObject = {};
+	for (const name of Object.getOwnPropertyNames(URL.prototype)) {
+		const val = url[name];
+		if (typeof val === 'string') {
+			obj[name] = url[name];
+		}
 	}
 	return obj;
 }
@@ -31,10 +46,11 @@ function sortObject<T extends HeadersObject>(obj: T): T {
 }
 
 export default async (req: ServerRequest) => {
-	const headers = new Headers();
-	headers.set('Content-Type', 'application/json; charset=utf8');
 	const now = new Date();
 	const uptime = now.getTime() - startTime.getTime();
+	const base = `${req.headers.get('x-forwarded-proto')}://${req.headers.get('x-forwarded-host')}`;
+	const url = new URL(req.url, base);
+	const status = parseInt(url.searchParams.get('statusCode'), 10) || 200;
 	const body = {
 		now: now.getTime(),
 		bootup: startTime.getTime(),
@@ -44,9 +60,12 @@ export default async (req: ServerRequest) => {
 		uptimeHuman: ms(uptime),
 		request: {
 			method: req.method,
-			url: req.url,
+			url: urlToObject(url),
 			headers: sortObject(headersToObject(req.headers)),
 			body: decode(await Deno.readAll(req.body)),
+		},
+		response: {
+			status
 		},
 		deno: {
 			pid: Deno.pid,
@@ -59,8 +78,10 @@ export default async (req: ServerRequest) => {
 		foo,
 	};
 	console.log(body);
+	const headers = new Headers();
+	headers.set('Content-Type', 'application/json; charset=utf8');
 	req.respond({
-		status: 200,
+		status,
 		headers,
 		body: JSON.stringify(body, null, 2),
 	});
