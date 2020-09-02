@@ -58,6 +58,7 @@ export default async (req: ServerRequest) => {
 		},
 		foo,
 	};
+	console.log(body);
 	req.respond({
 		status: 200,
 		headers,
