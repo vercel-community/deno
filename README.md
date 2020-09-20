@@ -9,7 +9,7 @@ function powered by [Deno](https://deno.land), running on
 Create a file called `api/hello.ts` with the following contents:
 
 ```typescript
-import { ServerRequest } from 'https://deno.land/std@0.67.0/http/server.ts';
+import { ServerRequest } from 'https://deno.land/std@0.70.0/http/server.ts';
 
 export default async (req: ServerRequest) => {
 	req.respond({ body: `Hello, from Deno v${Deno.version.deno}!` });
@@ -22,7 +22,7 @@ Next, define the **vercel-deno** runtime within the "functions" object in your
 ```json
 {
 	"functions": {
-		"api/**/*.[jt]s": { "runtime": "vercel-deno@0.7.0" }
+		"api/**/*.[jt]s": { "runtime": "vercel-deno@0.7.1" }
 	}
 }
 ```
