@@ -29,8 +29,9 @@ Next, define the **vercel-deno** runtime within the "functions" object in your
 
 **Demo:** https://vercel-deno.vercel.app/api/hello
 
-> **Note:** Be sure to place the `vercel.json` file in the _root_ directory of
-> your project.
+> **Note:** Check out the [`api`](./api) directory to see some examples of using
+> common Deno web frameworks with `vercel-deno`. Feel free to send a pull request to
+> add additional examples!
 
 ## Configuration
 
