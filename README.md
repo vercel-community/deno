@@ -10,6 +10,10 @@ Your serverless function file is expected to `export default` the HTTP handler
 function, and then `vercel-deno` takes care of invoking that handler function
 every time an HTTP request is received.
 
+> **Note:** Check out the [`api`](./api) directory to see examples of using
+> popular Deno web frameworks with `vercel-deno`. Feel free to send a pull request
+> to add additional examples!
+
 #### Example
 
 Create a file called `api/hello.ts` with the following contents:
@@ -34,10 +38,6 @@ Next, define the **vercel-deno** runtime within the "functions" object in your
 ```
 
 **Demo:** https://vercel-deno.vercel.app/api/hello
-
-> **Note:** Check out the [`api`](./api) directory to see examples of using
-> popular Deno web frameworks with `vercel-deno`. Feel free to send a pull request
-> to add additional examples!
 
 ## Configuration
 
