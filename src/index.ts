@@ -406,10 +406,7 @@ export async function startDevServer({
 	}
 
 	args.push(
-		'--allow-env',
-		'--allow-net',
-		'--allow-read',
-		'--allow-write',
+		'--allow-all',
 		join(__dirname, 'dev-server.ts')
 	);
 
