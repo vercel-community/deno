@@ -26,9 +26,9 @@ function headersToObject(headers: Headers): HeadersObject {
 function urlToObject(url: URL): StringObject {
 	const obj: HeadersObject = {};
 	for (const name of Object.getOwnPropertyNames(URL.prototype)) {
-		const val = url[name];
+		const val = (url as any)[name];
 		if (typeof val === 'string') {
-			obj[name] = url[name];
+			obj[name] = val;
 		}
 	}
 	return obj;
@@ -50,7 +50,7 @@ export default async (req: ServerRequest) => {
 	const uptime = now.getTime() - startTime.getTime();
 	const base = `${req.headers.get('x-forwarded-proto')}://${req.headers.get('x-forwarded-host')}`;
 	const url = new URL(req.url, base);
-	const status = parseInt(url.searchParams.get('statusCode'), 10) || 200;
+	const status = parseInt(url.searchParams.get('statusCode') || '200', 10);
 	const body = {
 		now: now.getTime(),
 		bootup: startTime.getTime(),
