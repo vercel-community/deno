@@ -2,7 +2,7 @@ import {
 	MandarineCore,
 	Controller,
 	GET,
-} from 'https://deno.land/x/mandarinets@v1.3.0/mod.ts';
+} from 'https://deno.land/x/mandarinets@v2.1.6/mod.ts';
 
 @Controller()
 export class MyController {
