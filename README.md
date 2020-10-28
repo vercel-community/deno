@@ -50,7 +50,7 @@ may configure for your serverless functions:
 | `DEBUG`         | Enables additional logging during build-time.                                                                                                                                            | `false` |
 | `DENO_TSCONFIG` | Passes the [`--config`](https://deno.land/manual/getting_started/command_line_interface#cache-and-compilation-flags) flag to specify a `tsconfig.json` file that Deno will use.          | None    |
 | `DENO_UNSTABLE` | Passes the [`--unstable`](https://deno.land/manual/getting_started/command_line_interface#cache-and-compilation-flags) flag to `deno cache` (at build-time) and `deno run` (at runtime). | `false` |
-| `DENO_VERSION`  | Version of `deno` that the serverless function will use.                                                                                                                                 | `1.4.5` |
+| `DENO_VERSION`  | Version of `deno` that the serverless function will use.                                                                                                                                 | `1.5.0` |
 
 ## Development
 
