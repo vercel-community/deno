@@ -22,4 +22,5 @@ exec deno run \
 	$unstable_flag \
 	$tsconfig_flag \
 	--allow-all \
+	--cached-only \
 	".runtime.ts"
