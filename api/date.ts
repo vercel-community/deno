@@ -1,4 +1,4 @@
-import { ServerRequest } from 'https://deno.land/std@0.74.0/http/server.ts';
+import { ServerRequest } from 'https://deno.land/std@0.76.0/http/server.ts';
 
 export default async (req: ServerRequest) => {
 	const body = new Date().toISOString();
