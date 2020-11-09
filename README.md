@@ -19,7 +19,7 @@ every time an HTTP request is received.
 Create a file called `api/hello.ts` with the following contents:
 
 ```typescript
-import { ServerRequest } from 'https://deno.land/std@0.74.0/http/server.ts';
+import { ServerRequest } from 'https://deno.land/std@0.77.0/http/server.ts';
 
 export default async (req: ServerRequest) => {
 	req.respond({ body: `Hello, from Deno v${Deno.version.deno}!` });
@@ -32,7 +32,7 @@ Next, define the **vercel-deno** runtime within the "functions" object in your
 ```json
 {
 	"functions": {
-		"api/**/*.[jt]s": { "runtime": "vercel-deno@0.7.1" }
+		"api/**/*.[jt]s": { "runtime": "vercel-deno@0.7.5" }
 	}
 }
 ```
