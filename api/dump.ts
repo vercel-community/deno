@@ -1,6 +1,6 @@
 import ms from 'https://denopkg.com/TooTallNate/ms';
-import { decode } from 'https://deno.land/std@0.77.0/encoding/utf8.ts';
-import { ServerRequest } from 'https://deno.land/std@0.77.0/http/server.ts';
+import { decode } from 'https://deno.land/std@0.79.0/encoding/utf8.ts';
+import { ServerRequest } from 'https://deno.land/std@0.79.0/http/server.ts';
 
 // Importing relative files works as expected
 import { foo } from '../src/foo.ts';
