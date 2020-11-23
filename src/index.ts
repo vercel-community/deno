@@ -47,7 +47,7 @@ interface BuildInfo {
 }
 
 const TMP = tmpdir();
-const DEFAULT_DENO_VERSION = 'v1.5.2';
+const DEFAULT_DENO_VERSION = 'v1.5.4';
 
 // `chmod()` is required for usage with `vercel-dev-runtime` since
 // file mode is not preserved in Vercel deployments from the CLI.
