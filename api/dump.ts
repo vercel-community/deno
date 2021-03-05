@@ -1,5 +1,4 @@
 import ms from 'https://denopkg.com/TooTallNate/ms';
-import { decode } from 'https://deno.land/std@0.89.0/encoding/utf8.ts';
 import { ServerRequest } from 'https://deno.land/std@0.89.0/http/server.ts';
 
 // Importing relative files works as expected
@@ -23,15 +22,20 @@ function headersToObject(headers: Headers): HeadersObject {
 	return obj;
 }
 
-function urlToObject(url: URL): StringObject {
-	const obj: HeadersObject = {};
-	for (const name of Object.getOwnPropertyNames(URL.prototype)) {
-		const val = url[name];
-		if (typeof val === 'string') {
-			obj[name] = url[name];
-		}
-	}
-	return obj;
+function urlToObject(url: URL) {
+	return {
+		href: url.href,
+		origin: url.origin,
+		protocol: url.protocol,
+		username: url.username,
+		password: url.password,
+		host: url.host,
+		hostname: url.hostname,
+		port: url.port,
+		pathname: url.pathname,
+		search: url.search,
+		hash: url.hash
+	};
 }
 
 function sortObject<T extends HeadersObject>(obj: T): T {
@@ -50,7 +54,7 @@ export default async (req: ServerRequest) => {
 	const uptime = now.getTime() - startTime.getTime();
 	const base = `${req.headers.get('x-forwarded-proto')}://${req.headers.get('x-forwarded-host')}`;
 	const url = new URL(req.url, base);
-	const status = parseInt(url.searchParams.get('statusCode'), 10) || 200;
+	const status = parseInt(url.searchParams.get('statusCode') ?? '', 10) || 200;
 	const body = {
 		now: now.getTime(),
 		bootup: startTime.getTime(),
@@ -62,7 +66,7 @@ export default async (req: ServerRequest) => {
 			method: req.method,
 			url: urlToObject(url),
 			headers: sortObject(headersToObject(req.headers)),
-			body: decode(await Deno.readAll(req.body)),
+			body: new TextDecoder().decode(await Deno.readAll(req.body)),
 		},
 		response: {
 			status
