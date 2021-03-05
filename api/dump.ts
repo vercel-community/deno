@@ -4,10 +4,6 @@ import { ServerRequest } from 'https://deno.land/std@0.89.0/http/server.ts';
 // Importing relative files works as expected
 import { foo } from '../src/foo.ts';
 
-interface StringObject {
-	[name: string]: string;
-}
-
 interface HeadersObject {
 	[name: string]: any;
 }
@@ -24,17 +20,17 @@ function headersToObject(headers: Headers): HeadersObject {
 
 function urlToObject(url: URL) {
 	return {
-		href: url.href,
-		origin: url.origin,
-		protocol: url.protocol,
-		username: url.username,
-		password: url.password,
-		host: url.host,
-		hostname: url.hostname,
-		port: url.port,
-		pathname: url.pathname,
-		search: url.search,
-		hash: url.hash
+		href: url.href || undefined,
+		origin: url.origin || undefined,
+		protocol: url.protocol || undefined,
+		username: url.username || undefined,
+		password: url.password || undefined,
+		host: url.host || undefined,
+		hostname: url.hostname || undefined,
+		port: url.port || undefined,
+		pathname: url.pathname || undefined,
+		search: url.search || undefined,
+		hash: url.hash || undefined
 	};
 }
 
