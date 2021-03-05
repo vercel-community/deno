@@ -1,13 +1,8 @@
 import ms from 'https://denopkg.com/TooTallNate/ms';
-import { decode } from 'https://deno.land/std@0.79.0/encoding/utf8.ts';
-import { ServerRequest } from 'https://deno.land/std@0.79.0/http/server.ts';
+import { ServerRequest } from 'https://deno.land/std@0.89.0/http/server.ts';
 
 // Importing relative files works as expected
 import { foo } from '../src/foo.ts';
-
-interface StringObject {
-	[name: string]: string;
-}
 
 interface HeadersObject {
 	[name: string]: any;
@@ -23,15 +18,20 @@ function headersToObject(headers: Headers): HeadersObject {
 	return obj;
 }
 
-function urlToObject(url: URL): StringObject {
-	const obj: HeadersObject = {};
-	for (const name of Object.getOwnPropertyNames(URL.prototype)) {
-		const val = url[name];
-		if (typeof val === 'string') {
-			obj[name] = url[name];
-		}
-	}
-	return obj;
+function urlToObject(url: URL) {
+	return {
+		href: url.href || undefined,
+		origin: url.origin || undefined,
+		protocol: url.protocol || undefined,
+		username: url.username || undefined,
+		password: url.password || undefined,
+		host: url.host || undefined,
+		hostname: url.hostname || undefined,
+		port: url.port || undefined,
+		pathname: url.pathname || undefined,
+		search: url.search || undefined,
+		hash: url.hash || undefined
+	};
 }
 
 function sortObject<T extends HeadersObject>(obj: T): T {
@@ -50,7 +50,7 @@ export default async (req: ServerRequest) => {
 	const uptime = now.getTime() - startTime.getTime();
 	const base = `${req.headers.get('x-forwarded-proto')}://${req.headers.get('x-forwarded-host')}`;
 	const url = new URL(req.url, base);
-	const status = parseInt(url.searchParams.get('statusCode'), 10) || 200;
+	const status = parseInt(url.searchParams.get('statusCode') ?? '', 10) || 200;
 	const body = {
 		now: now.getTime(),
 		bootup: startTime.getTime(),
@@ -62,7 +62,7 @@ export default async (req: ServerRequest) => {
 			method: req.method,
 			url: urlToObject(url),
 			headers: sortObject(headersToObject(req.headers)),
-			body: decode(await Deno.readAll(req.body)),
+			body: new TextDecoder().decode(await Deno.readAll(req.body)),
 		},
 		response: {
 			status
