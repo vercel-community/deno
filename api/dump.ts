@@ -51,6 +51,7 @@ export default async (req: ServerRequest) => {
 	const base = `${req.headers.get('x-forwarded-proto')}://${req.headers.get('x-forwarded-host')}`;
 	const url = new URL(req.url, base);
 	const status = parseInt(url.searchParams.get('statusCode') ?? '', 10) || 200;
+	const { NOW_REGION, AWS_REGION }  = Deno.env.toObject();
 	const body = {
 		now: now.getTime(),
 		bootup: startTime.getTime(),
@@ -73,7 +74,7 @@ export default async (req: ServerRequest) => {
 			execPath: Deno.execPath(),
 			version: Deno.version,
 			build: Deno.build,
-			env: sortObject(Deno.env.toObject()),
+			env: { NOW_REGION, AWS_REGION },
 		},
 		foo,
 	};
