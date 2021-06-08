@@ -35,10 +35,11 @@ interface FileInfo {
 }
 
 interface Program {
+	fileNames?: string[];
 	fileInfos: { [name: string]: FileInfo };
 	referencedMap: { [name: string]: string[] };
 	exportedModulesMap: { [name: string]: string[] };
-	semanticDiagnosticsPerFile: string[];
+	semanticDiagnosticsPerFile?: string[];
 }
 
 interface BuildInfo {
@@ -198,10 +199,11 @@ export async function build({
 		const buildInfo: BuildInfo = JSON.parse(await readFile(file, 'utf8'));
 		console.log(buildInfo);
 		const {
+			fileNames = [],
 			fileInfos,
 			referencedMap,
 			exportedModulesMap,
-			semanticDiagnosticsPerFile,
+			semanticDiagnosticsPerFile = [],
 		} = buildInfo.program;
 
 		for (const filename of Object.keys(fileInfos)) {
@@ -259,16 +261,25 @@ export async function build({
 			}
 		}
 
-		if (semanticDiagnosticsPerFile) {
-			for (let i = 0; i < semanticDiagnosticsPerFile.length; i++) {
-				const ref = semanticDiagnosticsPerFile[i];
-				if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
-					const relative = ref.substring(workPathUri.length + 1);
-					const updated = `file:///var/task/${relative}`;
-					semanticDiagnosticsPerFile[i] = updated;
-					sourceFiles.add(relative);
-					needsWrite = true;
-				}
+		for (let i = 0; i < fileNames.length; i++) {
+			const ref = fileNames[i];
+			if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
+				const relative = ref.substring(workPathUri.length + 1);
+				const updated = `file:///var/task/${relative}`;
+				fileNames[i] = updated;
+				sourceFiles.add(relative);
+				needsWrite = true;
+			}
+		}
+
+		for (let i = 0; i < semanticDiagnosticsPerFile.length; i++) {
+			const ref = semanticDiagnosticsPerFile[i];
+			if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
+				const relative = ref.substring(workPathUri.length + 1);
+				const updated = `file:///var/task/${relative}`;
+				semanticDiagnosticsPerFile[i] = updated;
+				sourceFiles.add(relative);
+				needsWrite = true;
 			}
 		}
 
