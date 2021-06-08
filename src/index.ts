@@ -197,7 +197,6 @@ export async function build({
 	for await (const file of getFilesWithExtension(genFileDir, '.buildinfo')) {
 		let needsWrite = false;
 		const buildInfo: BuildInfo = JSON.parse(await readFile(file, 'utf8'));
-		console.log(buildInfo);
 		const {
 			fileNames = [],
 			fileInfos,
