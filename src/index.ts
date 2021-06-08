@@ -196,6 +196,7 @@ export async function build({
 	for await (const file of getFilesWithExtension(genFileDir, '.buildinfo')) {
 		let needsWrite = false;
 		const buildInfo: BuildInfo = JSON.parse(await readFile(file, 'utf8'));
+		console.log(buildInfo);
 		const {
 			fileInfos,
 			referencedMap,
@@ -258,14 +259,16 @@ export async function build({
 			}
 		}
 
-		for (let i = 0; i < semanticDiagnosticsPerFile.length; i++) {
-			const ref = semanticDiagnosticsPerFile[i];
-			if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
-				const relative = ref.substring(workPathUri.length + 1);
-				const updated = `file:///var/task/${relative}`;
-				semanticDiagnosticsPerFile[i] = updated;
-				sourceFiles.add(relative);
-				needsWrite = true;
+		if (semanticDiagnosticsPerFile) {
+			for (let i = 0; i < semanticDiagnosticsPerFile.length; i++) {
+				const ref = semanticDiagnosticsPerFile[i];
+				if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
+					const relative = ref.substring(workPathUri.length + 1);
+					const updated = `file:///var/task/${relative}`;
+					semanticDiagnosticsPerFile[i] = updated;
+					sourceFiles.add(relative);
+					needsWrite = true;
+				}
 			}
 		}
 
