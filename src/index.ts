@@ -35,10 +35,11 @@ interface FileInfo {
 }
 
 interface Program {
+	fileNames?: string[];
 	fileInfos: { [name: string]: FileInfo };
 	referencedMap: { [name: string]: string[] };
 	exportedModulesMap: { [name: string]: string[] };
-	semanticDiagnosticsPerFile: string[];
+	semanticDiagnosticsPerFile?: string[];
 }
 
 interface BuildInfo {
@@ -47,7 +48,7 @@ interface BuildInfo {
 }
 
 const TMP = tmpdir();
-const DEFAULT_DENO_VERSION = 'v1.10.2';
+const DEFAULT_DENO_VERSION = 'v1.11.0';
 
 // `chmod()` is required for usage with `vercel-dev-runtime` since
 // file mode is not preserved in Vercel deployments from the CLI.
@@ -197,10 +198,11 @@ export async function build({
 		let needsWrite = false;
 		const buildInfo: BuildInfo = JSON.parse(await readFile(file, 'utf8'));
 		const {
+			fileNames = [],
 			fileInfos,
 			referencedMap,
 			exportedModulesMap,
-			semanticDiagnosticsPerFile,
+			semanticDiagnosticsPerFile = [],
 		} = buildInfo.program;
 
 		for (const filename of Object.keys(fileInfos)) {
@@ -253,6 +255,17 @@ export async function build({
 				const updated = `file:///var/task/${relative}`;
 				exportedModulesMap[updated] = refs;
 				delete exportedModulesMap[filename];
+				sourceFiles.add(relative);
+				needsWrite = true;
+			}
+		}
+
+		for (let i = 0; i < fileNames.length; i++) {
+			const ref = fileNames[i];
+			if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
+				const relative = ref.substring(workPathUri.length + 1);
+				const updated = `file:///var/task/${relative}`;
+				fileNames[i] = updated;
 				sourceFiles.add(relative);
 				needsWrite = true;
 			}
