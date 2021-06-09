@@ -187,7 +187,7 @@ export async function build({
 	});
 	delete args['--include-files'];
 
-	const argv = ['--allow-all', ...shebang.toArray(args)];
+	const argv = ['--allow-all', ...args];
 	const builderPath = join(__dirname, 'build.sh');
 	const cp = spawn(builderPath, argv, {
 		env,

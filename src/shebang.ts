@@ -20,7 +20,7 @@ export async function parse(filePath: string) {
 		argv = args.slice(start);
 	}
 
-	return arg(
+	const args = arg(
 		{
 			'--cert': String,
 			'--config': String,
@@ -34,20 +34,26 @@ export async function parse(filePath: string) {
 		},
 		{ argv, permissive: true }
 	);
-}
 
-type Then<T> = T extends PromiseLike<infer U> ? U : never;
+    function * iterator (this: typeof args) {
+        for (const key of keys(this)) {
+            if (key === '_') continue;
+            const val = this[key];
+            if (typeof val === 'boolean' && val) {
+                yield key;
+            } else if (typeof val === 'string') {
+                yield key;
+                yield val;
+            }
+        }
+        yield * this._;
+    }
 
-export function toArray(args: Then<ReturnType<typeof parse>>) {
-	const arr: string[] = [];
-	for (const key of keys(args)) {
-		if (key === '_') continue;
-		const val = args[key];
-		if (typeof val === 'boolean' && val) {
-			arr.push(key);
-		} else if (typeof val === 'string') {
-			arr.push(key, val);
-		}
-	}
-	return arr.concat(args._);
+    Object.defineProperty(args, Symbol.iterator, {
+        value: iterator
+    });
+
+    return args as typeof args & {
+        [Symbol.iterator]: typeof iterator
+    };
 }
