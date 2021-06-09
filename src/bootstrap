@@ -16,8 +16,8 @@ fi
 
 export DENO_DIR="$LAMBDA_TASK_ROOT/.deno"
 export PATH="$DENO_DIR/bin:$PATH"
-export NO_COLOR=1
 export HOME="$(eval echo "~")"
+
 exec deno run \
 	$unstable_flag \
 	$tsconfig_flag \

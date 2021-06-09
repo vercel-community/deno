@@ -1,8 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-export NO_COLOR=1
-
 unstable_flag=
 if [ -n "${DENO_UNSTABLE-}" ]; then
 	unstable_flag="--unstable"
@@ -23,9 +21,6 @@ DENO_BIN_DIR="$DENO_DIR/bin"
 mkdir -p "$DENO_BIN_DIR"
 export PATH="$DENO_BIN_DIR:$PATH"
 PLATFORM=unknown-linux-gnu
-if [ "$(uname)" = "Darwin" ]; then
-  PLATFORM=apple-darwin
-fi
 
 # Download `deno`
 cd "$DENO_BIN_DIR"
