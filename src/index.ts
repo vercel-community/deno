@@ -162,15 +162,22 @@ export async function build({
 		args['--unstable'] = true;
 	}
 
-	const tsconfig = args['--config'];
-	if (denoTsConfig) {
+	// Flags that accept file paths are relative to the entrypoint in
+	// the source file, but `deno run` is executed at the root directory
+	// of the project, so the arguments need to be relativized to the root
+	for (const flag of ['--cert', '--config', '--import-map', '--lock'] as const) {
+		const val = args[flag];
+		if (typeof val === 'string' && !isURL(val)) {
+			args[flag] = relative(
+				workPath,
+				resolve(absEntrypointDir, val)
+			);
+		}
+	}
+
+	if (denoTsConfig && !args['--config']) {
 		console.log('DENO_TSCONFIG env var is deprecated');
 		args['--config'] = denoTsConfig;
-	} else if (tsconfig && !isURL(tsconfig)) {
-		args['--config'] = relative(
-			workPath,
-			resolve(absEntrypointDir, tsconfig)
-		);
 	}
 
 	// This flag is specific to `vercel-deno`, so it does not
@@ -333,8 +340,11 @@ export async function build({
 		...(await glob('.deno/**/*', workPath)),
 	};
 
-	if (args['--config']) {
-		sourceFiles.add(args['--config']);
+	for (const flag of ['--cert', '--config', '--import-map', '--lock'] as const) {
+		const val = args[flag];
+		if (typeof val === 'string' && !isURL(val)) {
+			sourceFiles.add(val);
+		}
 	}
 
 	console.log('Detected source files:');
