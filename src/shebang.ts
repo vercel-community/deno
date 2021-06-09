@@ -36,7 +36,7 @@ export async function parse(filePath: string) {
 	);
 }
 
-export type Then<T> = T extends PromiseLike<infer U> ? U : never;
+type Then<T> = T extends PromiseLike<infer U> ? U : never;
 
 export function toArray(args: Then<ReturnType<typeof parse>>) {
 	const arr: string[] = [];

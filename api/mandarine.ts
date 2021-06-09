@@ -1,4 +1,5 @@
 #!/usr/bin/env deno run --config tsconfig.json --include-files myjson.json
+
 import {
 	MandarineCore,
 	Controller,
