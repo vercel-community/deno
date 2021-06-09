@@ -429,7 +429,7 @@ export async function startDevServer({
 			'DENO_UNSTABLE'
 		) || false;
 
-	const denoTsconfig = configString(
+	const denoTsConfig = configString(
 		config,
 		'tsconfig',
 		meta.buildEnv || {},
@@ -441,26 +441,50 @@ export async function startDevServer({
 		`vercel-deno-port-${Math.random().toString(32).substring(2)}`
 	);
 
+	const absEntrypoint = join(workPath, entrypoint);
+	const absEntrypointDir = dirname(absEntrypoint);
+
 	const env: Env = {
 		...process.env,
 		...meta.env,
-		VERCEL_DEV_ENTRYPOINT: join(workPath, entrypoint),
+		VERCEL_DEV_ENTRYPOINT: absEntrypoint,
 		VERCEL_DEV_PORT_FILE: portFile,
 	};
 
-	const args = ['run'];
-
-	if (denoTsconfig) {
-		args.push('--config', denoTsconfig);
-	}
+	const args = await shebang.parse(absEntrypoint);
 
 	if (unstable) {
-		args.push('--unstable');
+		console.log('DENO_UNSTABLE env var is deprecated');
+		args['--unstable'] = true;
 	}
 
-	args.push('--allow-all', join(__dirname, 'dev-server.ts'));
+	// Flags that accept file paths are relative to the entrypoint in
+	// the source file, but `deno run` is executed at the root directory
+	// of the project, so the arguments need to be relativized to the root
+	for (const flag of [
+		'--cert',
+		'--config',
+		'--import-map',
+		'--lock',
+	] as const) {
+		const val = args[flag];
+		if (typeof val === 'string' && !isURL(val)) {
+			args[flag] = relative(workPath, resolve(absEntrypointDir, val));
+		}
+	}
 
-	const child = spawn('deno', args, {
+	if (denoTsConfig && !args['--config']) {
+		console.log('DENO_TSCONFIG env var is deprecated');
+		args['--config'] = denoTsConfig;
+	}
+
+	const argv = [
+		'run',
+		'--allow-all',
+		...args,
+		join(__dirname, 'dev-server.ts'),
+	];
+	const child = spawn('deno', argv, {
 		cwd: workPath,
 		env,
 		stdio: ['ignore', 'inherit', 'inherit', 'pipe'],
