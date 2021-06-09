@@ -165,13 +165,15 @@ export async function build({
 	// Flags that accept file paths are relative to the entrypoint in
 	// the source file, but `deno run` is executed at the root directory
 	// of the project, so the arguments need to be relativized to the root
-	for (const flag of ['--cert', '--config', '--import-map', '--lock'] as const) {
+	for (const flag of [
+		'--cert',
+		'--config',
+		'--import-map',
+		'--lock',
+	] as const) {
 		const val = args[flag];
 		if (typeof val === 'string' && !isURL(val)) {
-			args[flag] = relative(
-				workPath,
-				resolve(absEntrypointDir, val)
-			);
+			args[flag] = relative(workPath, resolve(absEntrypointDir, val));
 		}
 	}
 
@@ -340,7 +342,12 @@ export async function build({
 		...(await glob('.deno/**/*', workPath)),
 	};
 
-	for (const flag of ['--cert', '--config', '--import-map', '--lock'] as const) {
+	for (const flag of [
+		'--cert',
+		'--config',
+		'--import-map',
+		'--lock',
+	] as const) {
 		const val = args[flag];
 		if (typeof val === 'string' && !isURL(val)) {
 			sourceFiles.add(val);

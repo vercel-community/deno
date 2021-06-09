@@ -35,25 +35,25 @@ export async function parse(filePath: string) {
 		{ argv, permissive: true }
 	);
 
-    function * iterator (this: typeof args) {
-        for (const key of keys(this)) {
-            if (key === '_') continue;
-            const val = this[key];
-            if (typeof val === 'boolean' && val) {
-                yield key;
-            } else if (typeof val === 'string') {
-                yield key;
-                yield val;
-            }
-        }
-        yield * this._;
-    }
+	function* iterator(this: typeof args) {
+		for (const key of keys(this)) {
+			if (key === '_') continue;
+			const val = this[key];
+			if (typeof val === 'boolean' && val) {
+				yield key;
+			} else if (typeof val === 'string') {
+				yield key;
+				yield val;
+			}
+		}
+		yield* this._;
+	}
 
-    Object.defineProperty(args, Symbol.iterator, {
-        value: iterator
-    });
+	Object.defineProperty(args, Symbol.iterator, {
+		value: iterator,
+	});
 
-    return args as typeof args & {
-        [Symbol.iterator]: typeof iterator
-    };
+	return args as typeof args & {
+		[Symbol.iterator]: typeof iterator;
+	};
 }
