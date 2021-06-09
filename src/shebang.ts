@@ -9,7 +9,7 @@ export async function parse(filePath: string) {
 	const firstLine = data.split('\n', 1)[0];
 
 	if (firstLine.startsWith('#!')) {
-		const shebang = firstLine.replace(/^\#\!/, '');
+		const shebang = firstLine.substring(2);
 		const args = bashShellParse(shebang);
 
 		// Slice off the beginning args until an option is found
