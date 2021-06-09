@@ -150,6 +150,7 @@ export async function build({
 	};
 
 	const absEntrypoint = join(workPath, entrypoint);
+	const absEntrypointDir = dirname(absEntrypoint);
 	const args = await shebang.parse(absEntrypoint);
 
 	if (debug) {
@@ -168,9 +169,16 @@ export async function build({
 	} else if (tsconfig && !isURL(tsconfig)) {
 		args['--config'] = relative(
 			workPath,
-			resolve(dirname(absEntrypoint), tsconfig)
+			resolve(absEntrypointDir, tsconfig)
 		);
 	}
+
+	// This flag is specific to `vercel-deno`, so it does not
+	// get included in the args that are passed to `deno run`
+	const includeFiles = (args['--include-files'] || []).map((f) => {
+		return relative(workPath, join(absEntrypointDir, f));
+	});
+	delete args['--include-files'];
 
 	const argv = ['--allow-all', ...shebang.toArray(args)];
 	const builderPath = join(__dirname, 'build.sh');
@@ -315,10 +323,7 @@ export async function build({
 
 	const bootstrapData = (
 		await readFile(join(workPath, 'bootstrap'), 'utf8')
-	).replace(
-		'$args',
-		bashShellQuote(argv)
-	);
+	).replace('$args', bashShellQuote(argv));
 
 	const outputFiles: Files = {
 		bootstrap: new FileBlob({
@@ -341,11 +346,14 @@ export async function build({
 	}
 
 	if (config.includeFiles) {
-		const includeFiles =
-			typeof config.includeFiles === 'string'
-				? [config.includeFiles]
-				: config.includeFiles;
+		if (typeof config.includeFiles === 'string') {
+			includeFiles.push(config.includeFiles);
+		} else {
+			includeFiles.push(...config.includeFiles);
+		}
+	}
 
+	if (includeFiles.length > 0) {
 		console.log('Including additional files:');
 		for (const pattern of includeFiles) {
 			const matches = await glob(pattern, workPath);

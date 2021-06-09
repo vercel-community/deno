@@ -28,6 +28,9 @@ export async function parse(filePath: string) {
 			'--import-map': String,
 			'--lock': String,
 			'--unstable': Boolean,
+
+			// `vercel-deno` specific flags
+			'--include-files': [String],
 		},
 		{ argv, permissive: true }
 	);
