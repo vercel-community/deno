@@ -1,6 +1,6 @@
 import fs from 'fs';
 import yn from 'yn';
-import { join } from 'path';
+import { dirname, join, relative, resolve } from 'path';
 import { tmpdir } from 'os';
 import { spawn } from 'child_process';
 import { Readable } from 'stream';
@@ -10,6 +10,7 @@ import {
 	BuildOptions,
 	Config,
 	Files,
+	FileBlob,
 	FileFsRef,
 	StartDevServerOptions,
 	StartDevServerResult,
@@ -18,6 +19,9 @@ import {
 	glob,
 	shouldServe,
 } from '@vercel/build-utils';
+import * as shebang from './shebang';
+import { isURL } from './util';
+import { bashShellQuote } from 'shell-args';
 
 const { stat, readdir, readFile, writeFile, unlink } = fs.promises;
 
@@ -145,20 +149,32 @@ export async function build({
 		DENO_VERSION: denoVersion,
 	};
 
+	const absEntrypoint = join(workPath, entrypoint);
+	const args = await shebang.parse(absEntrypoint);
+
 	if (debug) {
 		env.DEBUG = '1';
 	}
 
 	if (unstable) {
-		env.DENO_UNSTABLE = '1';
+		console.log('DENO_UNSTABLE env var is deprecated');
+		args['--unstable'] = true;
 	}
 
+	const tsconfig = args['--config'];
 	if (denoTsConfig) {
-		env.DENO_TSCONFIG = denoTsConfig;
+		console.log('DENO_TSCONFIG env var is deprecated');
+		args['--config'] = denoTsConfig;
+	} else if (tsconfig && !isURL(tsconfig)) {
+		args['--config'] = relative(
+			workPath,
+			resolve(dirname(absEntrypoint), tsconfig)
+		);
 	}
 
+	const argv = ['--allow-all', ...shebang.toArray(args)];
 	const builderPath = join(__dirname, 'build.sh');
-	const cp = spawn(builderPath, [], {
+	const cp = spawn(builderPath, argv, {
 		env,
 		cwd: workPath,
 		stdio: 'inherit',
@@ -206,7 +222,10 @@ export async function build({
 		} = buildInfo.program;
 
 		for (const filename of Object.keys(fileInfos)) {
-			if (typeof filename === 'string' && filename.startsWith(workPathUri)) {
+			if (
+				typeof filename === 'string' &&
+				filename.startsWith(workPathUri)
+			) {
 				const relative = filename.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				fileInfos[updated] = fileInfos[filename];
@@ -228,7 +247,10 @@ export async function build({
 				}
 			}
 
-			if (typeof filename === 'string' && filename.startsWith(workPathUri)) {
+			if (
+				typeof filename === 'string' &&
+				filename.startsWith(workPathUri)
+			) {
 				const relative = filename.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				referencedMap[updated] = refs;
@@ -250,7 +272,10 @@ export async function build({
 				}
 			}
 
-			if (typeof filename === 'string' && filename.startsWith(workPathUri)) {
+			if (
+				typeof filename === 'string' &&
+				filename.startsWith(workPathUri)
+			) {
 				const relative = filename.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				exportedModulesMap[updated] = refs;
@@ -288,15 +313,23 @@ export async function build({
 		}
 	}
 
+	const bootstrapData = (
+		await readFile(join(workPath, 'bootstrap'), 'utf8')
+	).replace(
+		'$args',
+		bashShellQuote(argv)
+	);
+
 	const outputFiles: Files = {
-		bootstrap: await FileFsRef.fromFsPath({
-			fsPath: join(workPath, 'bootstrap'),
+		bootstrap: new FileBlob({
+			data: bootstrapData,
+			mode: fs.statSync(join(workPath, 'bootstrap')).mode,
 		}),
 		...(await glob('.deno/**/*', workPath)),
 	};
 
-	if (denoTsConfig) {
-		sourceFiles.add(denoTsConfig);
+	if (args['--config']) {
+		sourceFiles.add(args['--config']);
 	}
 
 	console.log('Detected source files:');
@@ -325,21 +358,10 @@ export async function build({
 		}
 	}
 
-	const lambdaEnv: { [name: string]: string } = {};
-
-	if (unstable) {
-		lambdaEnv.DENO_UNSTABLE = '1';
-	}
-
-	if (denoTsConfig) {
-		lambdaEnv.DENO_TSCONFIG = denoTsConfig;
-	}
-
 	const output = await createLambda({
 		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided.al2',
-		environment: lambdaEnv,
 	});
 
 	return { output };
@@ -408,7 +430,7 @@ export async function startDevServer({
 		VERCEL_DEV_PORT_FILE: portFile,
 	};
 
-	const args: string[] = ['run'];
+	const args = ['run'];
 
 	if (denoTsconfig) {
 		args.push('--config', denoTsconfig);
@@ -418,10 +440,7 @@ export async function startDevServer({
 		args.push('--unstable');
 	}
 
-	args.push(
-		'--allow-all',
-		join(__dirname, 'dev-server.ts')
-	);
+	args.push('--allow-all', join(__dirname, 'dev-server.ts'));
 
 	const child = spawn('deno', args, {
 		cwd: workPath,
@@ -484,7 +503,7 @@ async function waitForPortFile_(opts: {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		try {
 			const port = Number(await readFile(opts.portFile, 'ascii'));
-			unlink(opts.portFile).catch((err) => {
+			unlink(opts.portFile).catch((_) => {
 				console.error('Could not delete port file: %j', opts.portFile);
 			});
 			return { port };
