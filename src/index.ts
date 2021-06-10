@@ -1,6 +1,6 @@
 import fs from 'fs';
 import yn from 'yn';
-import { join } from 'path';
+import { dirname, join, relative, resolve } from 'path';
 import { tmpdir } from 'os';
 import { spawn } from 'child_process';
 import { Readable } from 'stream';
@@ -10,6 +10,7 @@ import {
 	BuildOptions,
 	Config,
 	Files,
+	FileBlob,
 	FileFsRef,
 	StartDevServerOptions,
 	StartDevServerResult,
@@ -18,6 +19,9 @@ import {
 	glob,
 	shouldServe,
 } from '@vercel/build-utils';
+import * as shebang from './shebang';
+import { isURL } from './util';
+import { bashShellQuote } from 'shell-args';
 
 const { stat, readdir, readFile, writeFile, unlink } = fs.promises;
 
@@ -60,7 +64,7 @@ function configBool(
 	configName: string,
 	env: Env,
 	envName: string
-): boolean | void {
+): boolean | undefined {
 	const configVal = config[configName];
 	if (typeof configVal === 'boolean') {
 		return configVal;
@@ -87,7 +91,7 @@ function configString(
 	configName: string,
 	env: Env,
 	envName: string
-): string | void {
+): string | undefined {
 	const configVal = config[configName];
 	if (typeof configVal === 'string') {
 		return configVal;
@@ -119,14 +123,18 @@ export async function build({
 
 	await download(files, workPath, meta);
 
+	const absEntrypoint = join(workPath, entrypoint);
+	const absEntrypointDir = dirname(absEntrypoint);
+	const args = await shebang.parse(absEntrypoint);
+
 	const debug = configBool(config, 'debug', process.env, 'DEBUG') || false;
+
+	// @deprecated
 	const unstable =
 		configBool(config, 'denoUnstable', process.env, 'DENO_UNSTABLE') ||
 		false;
-	let denoVersion =
-		configString(config, 'denoVersion', process.env, 'DENO_VERSION') ||
-		DEFAULT_DENO_VERSION;
 
+	// @deprecated
 	const denoTsConfig = configString(
 		config,
 		'tsconfig',
@@ -134,7 +142,23 @@ export async function build({
 		'DENO_TSCONFIG'
 	);
 
-	if (!denoVersion.startsWith('v')) {
+	let denoVersion = args['--version'];
+	delete args['--version'];
+
+	// @deprecated
+	if (!denoVersion) {
+		denoVersion = configString(
+			config,
+			'denoVersion',
+			process.env,
+			'DENO_VERSION'
+		);
+		if (denoVersion) {
+			console.log('DENO_VERSION env var is deprecated');
+		}
+	}
+
+	if (denoVersion && !denoVersion.startsWith('v')) {
 		denoVersion = `v${denoVersion}`;
 	}
 
@@ -142,23 +166,50 @@ export async function build({
 		...process.env,
 		BUILDER: __dirname,
 		ENTRYPOINT: entrypoint,
-		DENO_VERSION: denoVersion,
+		DENO_VERSION: denoVersion || DEFAULT_DENO_VERSION,
 	};
 
 	if (debug) {
 		env.DEBUG = '1';
 	}
 
+	// @deprecated
 	if (unstable) {
-		env.DENO_UNSTABLE = '1';
+		console.log('DENO_UNSTABLE env var is deprecated');
+		args['--unstable'] = true;
 	}
 
-	if (denoTsConfig) {
-		env.DENO_TSCONFIG = denoTsConfig;
+	// Flags that accept file paths are relative to the entrypoint in
+	// the source file, but `deno run` is executed at the root directory
+	// of the project, so the arguments need to be relativized to the root
+	for (const flag of [
+		'--cert',
+		'--config',
+		'--import-map',
+		'--lock',
+	] as const) {
+		const val = args[flag];
+		if (typeof val === 'string' && !isURL(val)) {
+			args[flag] = relative(workPath, resolve(absEntrypointDir, val));
+		}
 	}
 
+	// @deprecated
+	if (denoTsConfig && !args['--config']) {
+		console.log('DENO_TSCONFIG env var is deprecated');
+		args['--config'] = denoTsConfig;
+	}
+
+	// This flag is specific to `vercel-deno`, so it does not
+	// get included in the args that are passed to `deno run`
+	const includeFiles = (args['--include-files'] || []).map((f) => {
+		return relative(workPath, join(absEntrypointDir, f));
+	});
+	delete args['--include-files'];
+
+	const argv = ['--allow-all', ...args];
 	const builderPath = join(__dirname, 'build.sh');
-	const cp = spawn(builderPath, [], {
+	const cp = spawn(builderPath, argv, {
 		env,
 		cwd: workPath,
 		stdio: 'inherit',
@@ -206,7 +257,10 @@ export async function build({
 		} = buildInfo.program;
 
 		for (const filename of Object.keys(fileInfos)) {
-			if (typeof filename === 'string' && filename.startsWith(workPathUri)) {
+			if (
+				typeof filename === 'string' &&
+				filename.startsWith(workPathUri)
+			) {
 				const relative = filename.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				fileInfos[updated] = fileInfos[filename];
@@ -228,7 +282,10 @@ export async function build({
 				}
 			}
 
-			if (typeof filename === 'string' && filename.startsWith(workPathUri)) {
+			if (
+				typeof filename === 'string' &&
+				filename.startsWith(workPathUri)
+			) {
 				const relative = filename.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				referencedMap[updated] = refs;
@@ -250,7 +307,10 @@ export async function build({
 				}
 			}
 
-			if (typeof filename === 'string' && filename.startsWith(workPathUri)) {
+			if (
+				typeof filename === 'string' &&
+				filename.startsWith(workPathUri)
+			) {
 				const relative = filename.substring(workPathUri.length + 1);
 				const updated = `file:///var/task/${relative}`;
 				exportedModulesMap[updated] = refs;
@@ -288,15 +348,28 @@ export async function build({
 		}
 	}
 
+	const bootstrapData = (
+		await readFile(join(workPath, 'bootstrap'), 'utf8')
+	).replace('$args', bashShellQuote(argv));
+
 	const outputFiles: Files = {
-		bootstrap: await FileFsRef.fromFsPath({
-			fsPath: join(workPath, 'bootstrap'),
+		bootstrap: new FileBlob({
+			data: bootstrapData,
+			mode: fs.statSync(join(workPath, 'bootstrap')).mode,
 		}),
 		...(await glob('.deno/**/*', workPath)),
 	};
 
-	if (denoTsConfig) {
-		sourceFiles.add(denoTsConfig);
+	for (const flag of [
+		'--cert',
+		'--config',
+		'--import-map',
+		'--lock',
+	] as const) {
+		const val = args[flag];
+		if (typeof val === 'string' && !isURL(val)) {
+			sourceFiles.add(val);
+		}
 	}
 
 	console.log('Detected source files:');
@@ -308,11 +381,14 @@ export async function build({
 	}
 
 	if (config.includeFiles) {
-		const includeFiles =
-			typeof config.includeFiles === 'string'
-				? [config.includeFiles]
-				: config.includeFiles;
+		if (typeof config.includeFiles === 'string') {
+			includeFiles.push(config.includeFiles);
+		} else {
+			includeFiles.push(...config.includeFiles);
+		}
+	}
 
+	if (includeFiles.length > 0) {
 		console.log('Including additional files:');
 		for (const pattern of includeFiles) {
 			const matches = await glob(pattern, workPath);
@@ -325,21 +401,10 @@ export async function build({
 		}
 	}
 
-	const lambdaEnv: { [name: string]: string } = {};
-
-	if (unstable) {
-		lambdaEnv.DENO_UNSTABLE = '1';
-	}
-
-	if (denoTsConfig) {
-		lambdaEnv.DENO_TSCONFIG = denoTsConfig;
-	}
-
 	const output = await createLambda({
 		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided.al2',
-		environment: lambdaEnv,
 	});
 
 	return { output };
@@ -381,6 +446,7 @@ export async function startDevServer({
 	config,
 	meta = {},
 }: StartDevServerOptions): Promise<StartDevServerResult> {
+	// @deprecated
 	const unstable =
 		configBool(
 			config,
@@ -389,7 +455,8 @@ export async function startDevServer({
 			'DENO_UNSTABLE'
 		) || false;
 
-	const denoTsconfig = configString(
+	// @deprecated
+	const denoTsConfig = configString(
 		config,
 		'tsconfig',
 		meta.buildEnv || {},
@@ -401,29 +468,52 @@ export async function startDevServer({
 		`vercel-deno-port-${Math.random().toString(32).substring(2)}`
 	);
 
+	const absEntrypoint = join(workPath, entrypoint);
+	const absEntrypointDir = dirname(absEntrypoint);
+
 	const env: Env = {
 		...process.env,
 		...meta.env,
-		VERCEL_DEV_ENTRYPOINT: join(workPath, entrypoint),
+		VERCEL_DEV_ENTRYPOINT: absEntrypoint,
 		VERCEL_DEV_PORT_FILE: portFile,
 	};
 
-	const args: string[] = ['run'];
+	const args = await shebang.parse(absEntrypoint);
 
-	if (denoTsconfig) {
-		args.push('--config', denoTsconfig);
-	}
-
+	// @deprecated
 	if (unstable) {
-		args.push('--unstable');
+		console.log('DENO_UNSTABLE env var is deprecated');
+		args['--unstable'] = true;
 	}
 
-	args.push(
-		'--allow-all',
-		join(__dirname, 'dev-server.ts')
-	);
+	// Flags that accept file paths are relative to the entrypoint in
+	// the source file, but `deno run` is executed at the root directory
+	// of the project, so the arguments need to be relativized to the root
+	for (const flag of [
+		'--cert',
+		'--config',
+		'--import-map',
+		'--lock',
+	] as const) {
+		const val = args[flag];
+		if (typeof val === 'string' && !isURL(val)) {
+			args[flag] = relative(workPath, resolve(absEntrypointDir, val));
+		}
+	}
 
-	const child = spawn('deno', args, {
+	// @deprecated
+	if (denoTsConfig && !args['--config']) {
+		console.log('DENO_TSCONFIG env var is deprecated');
+		args['--config'] = denoTsConfig;
+	}
+
+	const argv = [
+		'run',
+		'--allow-all',
+		...args,
+		join(__dirname, 'dev-server.ts'),
+	];
+	const child = spawn('deno', argv, {
 		cwd: workPath,
 		env,
 		stdio: ['ignore', 'inherit', 'inherit', 'pipe'],
@@ -484,7 +574,7 @@ async function waitForPortFile_(opts: {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		try {
 			const port = Number(await readFile(opts.portFile, 'ascii'));
-			unlink(opts.portFile).catch((err) => {
+			unlink(opts.portFile).catch((_) => {
 				console.error('Could not delete port file: %j', opts.portFile);
 			});
 			return { port };

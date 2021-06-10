@@ -1,3 +1,5 @@
+#!/usr/bin/env deno run --location https://example.com/page
+
 import ms from 'https://denopkg.com/TooTallNate/ms';
 import { ServerRequest } from 'https://deno.land/std@0.98.0/http/server.ts';
 
@@ -76,6 +78,7 @@ export default async (req: ServerRequest) => {
 			build: Deno.build,
 			env: { NOW_REGION, AWS_REGION },
 		},
+		location: window.location,
 		foo,
 	};
 	console.log(body);

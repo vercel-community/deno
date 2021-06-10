@@ -17,21 +17,12 @@ const {
 	AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
 	AWS_LAMBDA_LOG_GROUP_NAME,
 	AWS_LAMBDA_LOG_STREAM_NAME,
-	LAMBDA_TASK_ROOT,
 	_HANDLER,
+	ENTRYPOINT,
 	AWS_LAMBDA_RUNTIME_API,
 } = Deno.env.toObject();
 
 Deno.env.delete('SHLVL');
-
-async function start(): Promise<void> {
-	try {
-		await processEvents();
-	} catch (err) {
-		console.error(err);
-		Deno.exit(1);
-	}
-}
 
 async function processEvents(): Promise<void> {
 	let handler: Handler | null = null;
@@ -236,7 +227,13 @@ function toLambdaErr({ name, message, stack }: Error) {
 	};
 }
 
-start().catch((err) => {
-	console.error(err);
-	Deno.exit(1);
-});
+if (_HANDLER) {
+	// Runtime - execute the runtime loop
+	processEvents().catch((err) => {
+		console.error(err);
+		Deno.exit(1);
+	});
+} else {
+	// Build - import the entrypoint so that it gets cached
+	await import(`./${ENTRYPOINT}`);
+}

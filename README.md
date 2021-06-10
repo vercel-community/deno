@@ -41,16 +41,24 @@ Next, define the **vercel-deno** runtime within the "functions" object in your
 
 ## Configuration
 
-There are a few [build environment
-variables](https://vercel.com/docs/configuration#project/build-env) that you
-may configure for your serverless functions:
+To configure which flags are passed to `deno run`, a [shebang](https://wikipedia.org/wiki/Shebang_(Unix)) needs to be defined in
+the entrypoint of the Serverless Function containing the flags that will be used.
 
-| Name            | Description                                                                                                                                                                              | Default  |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| `DEBUG`         | Enables additional logging during build-time.                                                                                                                                            | `false`  |
-| `DENO_TSCONFIG` | Passes the [`--config`](https://deno.land/manual/getting_started/command_line_interface#cache-and-compilation-flags) flag to specify a `tsconfig.json` file that Deno will use.          | None     |
-| `DENO_UNSTABLE` | Passes the [`--unstable`](https://deno.land/manual/getting_started/command_line_interface#cache-and-compilation-flags) flag to `deno cache` (at build-time) and `deno run` (at runtime). | `false`  |
-| `DENO_VERSION`  | Version of `deno` that the serverless function will use.                                                                                                                                 | `1.11.0` |
+For example, to set the `window.location` object and use a specific tsconfig:
+
+```typescript
+#!/usr/bin/env deno run --location http://example.com/path --config other-tsconfig.json
+import { ServerRequest } from "https://deno.land/std@0.98.0/http/server.ts";
+
+export default async (req: ServerRequest) => {
+	req.respond({ body: `Location is ${window.location.href}!` });
+};
+```
+
+There are also a few flags that can be used that are specific to `vercel-deno`:
+
+ * `--version` - Specify a specific version of Deno to use.
+ * `--include-files` - Glob pattern of static files to include within the Serverless Function. Can be specified more than once.
 
 ## Development
 
@@ -58,4 +66,4 @@ The `vercel dev` command is supported on Windows, macOS, and Linux:
 
 -   Vercel CLI v19.1.0 or newer is required.
 -   Uses the `deno` binary installed on the system (does not download `deno`).
--   Specifying a specific version of Deno via `DENO_VERSION` env var is not supported.
+-   Specifying a specific version of Deno via `--version` flag is ignored.

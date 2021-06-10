@@ -1,19 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-unstable_flag=
-if [ -n "${DENO_UNSTABLE-}" ]; then
-	unstable_flag="--unstable"
-	unset DENO_UNSTABLE
-fi
-
-tsconfig_flag=
-if [ -n "${DENO_TSCONFIG-}" ]; then
-	echo "Using tsconfig: ${DENO_TSCONFIG}"
-	tsconfig_flag="-c ${DENO_TSCONFIG}"
-	unset DENO_TSCONFIG
-fi
-
 # Prepare for `deno.zip` download from GitHub Releases
 ROOT_DIR="$(pwd)"
 export DENO_DIR="$ROOT_DIR/.deno"
@@ -38,14 +25,13 @@ cp ${DEBUG:+-v} "$BUILDER/bootstrap" "bootstrap"
 cp ${DEBUG:+-v} "$BUILDER/runtime.ts" ".runtime.ts"
 
 echo "Caching imports for \"$ENTRYPOINT\"…"
-echo "deno cache ${tsconfig_flag} ${unstable_flag} .runtime.ts ${ENTRYPOINT}"
-deno cache $tsconfig_flag $unstable_flag ".runtime.ts" "$ENTRYPOINT"
+echo "deno run $* $ENTRYPOINT"
+deno run "$@" ".runtime.ts"
 
 # Move the `gen` files to match AWS `/var/task`
 mkdir -p${DEBUG:+v} "$DENO_DIR/gen/file/var"
 mv ${DEBUG:+-v} "$DENO_DIR/gen/file$ROOT_DIR" "$DENO_DIR/gen/file/var/task"
 rm -rf${DEBUG:+v} "$DENO_DIR/gen/file/$(echo "$ROOT_DIR" | awk -F'/' '{print $2}')"
-
 
 if [ -n "${DEBUG-}" ]; then
 	eval "$(curl -sfLS https://import.pw)"

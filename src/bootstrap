@@ -2,24 +2,8 @@
 set -euo pipefail
 cd "$LAMBDA_TASK_ROOT"
 
-unstable_flag=
-if [ -n "${DENO_UNSTABLE-}" ]; then
-	unstable_flag="--unstable"
-	unset DENO_UNSTABLE
-fi
-
-tsconfig_flag=
-if [ -n "${DENO_TSCONFIG-}" ]; then
-	tsconfig_flag="--config ${DENO_TSCONFIG}"
-	unset DENO_TSCONFIG;
-fi
-
 export DENO_DIR="$LAMBDA_TASK_ROOT/.deno"
 export PATH="$DENO_DIR/bin:$PATH"
 export HOME="$(eval echo "~")"
 
-exec deno run \
-	$unstable_flag \
-	$tsconfig_flag \
-	--allow-all \
-	".runtime.ts"
+exec deno run $args ".runtime.ts"
