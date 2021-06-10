@@ -30,6 +30,7 @@ export async function parse(filePath: string) {
 			'--unstable': Boolean,
 
 			// `vercel-deno` specific flags
+			'--version': String,
 			'--include-files': [String],
 		},
 		{ argv, permissive: true }

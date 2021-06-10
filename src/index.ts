@@ -64,7 +64,7 @@ function configBool(
 	configName: string,
 	env: Env,
 	envName: string
-): boolean | void {
+): boolean | undefined {
 	const configVal = config[configName];
 	if (typeof configVal === 'boolean') {
 		return configVal;
@@ -91,7 +91,7 @@ function configString(
 	configName: string,
 	env: Env,
 	envName: string
-): string | void {
+): string | undefined {
 	const configVal = config[configName];
 	if (typeof configVal === 'string') {
 		return configVal;
@@ -123,13 +123,15 @@ export async function build({
 
 	await download(files, workPath, meta);
 
+	const absEntrypoint = join(workPath, entrypoint);
+	const absEntrypointDir = dirname(absEntrypoint);
+	const args = await shebang.parse(absEntrypoint);
+
 	const debug = configBool(config, 'debug', process.env, 'DEBUG') || false;
+
 	const unstable =
 		configBool(config, 'denoUnstable', process.env, 'DENO_UNSTABLE') ||
 		false;
-	let denoVersion =
-		configString(config, 'denoVersion', process.env, 'DENO_VERSION') ||
-		DEFAULT_DENO_VERSION;
 
 	const denoTsConfig = configString(
 		config,
@@ -138,7 +140,22 @@ export async function build({
 		'DENO_TSCONFIG'
 	);
 
-	if (!denoVersion.startsWith('v')) {
+	let denoVersion = args['--version'];
+	delete args['--version'];
+
+	if (!denoVersion) {
+		denoVersion = configString(
+			config,
+			'denoVersion',
+			process.env,
+			'DENO_VERSION'
+		);
+		if (denoVersion) {
+			console.log('DENO_VERSION env var is deprecated');
+		}
+	}
+
+	if (denoVersion && !denoVersion.startsWith('v')) {
 		denoVersion = `v${denoVersion}`;
 	}
 
@@ -146,12 +163,8 @@ export async function build({
 		...process.env,
 		BUILDER: __dirname,
 		ENTRYPOINT: entrypoint,
-		DENO_VERSION: denoVersion,
+		DENO_VERSION: denoVersion || DEFAULT_DENO_VERSION,
 	};
-
-	const absEntrypoint = join(workPath, entrypoint);
-	const absEntrypointDir = dirname(absEntrypoint);
-	const args = await shebang.parse(absEntrypoint);
 
 	if (debug) {
 		env.DEBUG = '1';
