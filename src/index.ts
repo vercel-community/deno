@@ -129,10 +129,12 @@ export async function build({
 
 	const debug = configBool(config, 'debug', process.env, 'DEBUG') || false;
 
+	// @deprecated
 	const unstable =
 		configBool(config, 'denoUnstable', process.env, 'DENO_UNSTABLE') ||
 		false;
 
+	// @deprecated
 	const denoTsConfig = configString(
 		config,
 		'tsconfig',
@@ -143,6 +145,7 @@ export async function build({
 	let denoVersion = args['--version'];
 	delete args['--version'];
 
+	// @deprecated
 	if (!denoVersion) {
 		denoVersion = configString(
 			config,
@@ -170,6 +173,7 @@ export async function build({
 		env.DEBUG = '1';
 	}
 
+	// @deprecated
 	if (unstable) {
 		console.log('DENO_UNSTABLE env var is deprecated');
 		args['--unstable'] = true;
@@ -190,6 +194,7 @@ export async function build({
 		}
 	}
 
+	// @deprecated
 	if (denoTsConfig && !args['--config']) {
 		console.log('DENO_TSCONFIG env var is deprecated');
 		args['--config'] = denoTsConfig;
@@ -441,6 +446,7 @@ export async function startDevServer({
 	config,
 	meta = {},
 }: StartDevServerOptions): Promise<StartDevServerResult> {
+	// @deprecated
 	const unstable =
 		configBool(
 			config,
@@ -449,6 +455,7 @@ export async function startDevServer({
 			'DENO_UNSTABLE'
 		) || false;
 
+	// @deprecated
 	const denoTsConfig = configString(
 		config,
 		'tsconfig',
@@ -473,6 +480,7 @@ export async function startDevServer({
 
 	const args = await shebang.parse(absEntrypoint);
 
+	// @deprecated
 	if (unstable) {
 		console.log('DENO_UNSTABLE env var is deprecated');
 		args['--unstable'] = true;
@@ -493,6 +501,7 @@ export async function startDevServer({
 		}
 	}
 
+	// @deprecated
 	if (denoTsConfig && !args['--config']) {
 		console.log('DENO_TSCONFIG env var is deprecated');
 		args['--config'] = denoTsConfig;
