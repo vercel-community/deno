@@ -58,7 +58,7 @@ export default async (req: ServerRequest) => {
 There are also a few flags that can be used that are specific to `vercel-deno`:
 
  * `--version` - Specify a specific version of Deno to use.
- * `--include-files` - Glob pattern of static files to include within the Serverless Function.
+ * `--include-files` - Glob pattern of static files to include within the Serverless Function. Can be specified more than once.
 
 ## Development
 
