@@ -6,7 +6,6 @@ import { spawn } from 'child_process';
 import { Readable } from 'stream';
 import once from '@tootallnate/once';
 import {
-	AnalyzeOptions,
 	BuildOptions,
 	Config,
 	Files,
@@ -106,10 +105,6 @@ function configString(
 export const version = 3;
 
 export { shouldServe };
-
-export function analyze({ files, entrypoint }: AnalyzeOptions) {
-	return files[entrypoint].digest;
-}
 
 export async function build({
 	workPath,
