@@ -34,7 +34,7 @@ mv ${DEBUG:+-v} "$DENO_DIR/gen/file$ROOT_DIR" "$DENO_DIR/gen/file/var/task"
 rm -rf${DEBUG:+v} "$DENO_DIR/gen/file/$(echo "$ROOT_DIR" | awk -F'/' '{print $2}')"
 
 if [ -n "${DEBUG-}" ]; then
-	eval "$(curl -sfLS https://import.pw)"
+	eval "$(curl -sfLS https://import.sh)"
 	import "static-binaries"
 	static_binaries tree
 	echo
