@@ -159,6 +159,7 @@ export async function build({
 
 	const env: Env = {
 		...process.env,
+		...args.env,
 		BUILDER: __dirname,
 		ENTRYPOINT: entrypoint,
 		DENO_VERSION: denoVersion || DEFAULT_DENO_VERSION,
@@ -400,6 +401,7 @@ export async function build({
 		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided.al2',
+		environment: args.env
 	});
 
 	return { output };
