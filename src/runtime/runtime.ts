@@ -1,4 +1,4 @@
-import * as base64 from 'https://deno.land/x/base64/mod.ts';
+import * as base64 from 'https://deno.land/x/base64@v0.2.1/mod.ts';
 import { TextProtoReader } from 'https://deno.land/std@0.98.0/textproto/mod.ts';
 import { BufReader, BufWriter } from 'https://deno.land/std@0.98.0/io/bufio.ts';
 import {
