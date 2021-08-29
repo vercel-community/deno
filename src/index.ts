@@ -120,7 +120,7 @@ export async function build({
 
 	const absEntrypoint = join(workPath, entrypoint);
 	const absEntrypointDir = dirname(absEntrypoint);
-	const args = await shebang.parse(absEntrypoint);
+	const args = shebang.parse(await fs.promises.readFile(absEntrypoint, 'utf8'));
 
 	const debug = configBool(config, 'debug', process.env, 'DEBUG') || false;
 
@@ -159,6 +159,7 @@ export async function build({
 
 	const env: Env = {
 		...process.env,
+		...args.env,
 		BUILDER: __dirname,
 		ENTRYPOINT: entrypoint,
 		DENO_VERSION: denoVersion || DEFAULT_DENO_VERSION,
@@ -400,6 +401,7 @@ export async function build({
 		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided.al2',
+		environment: args.env
 	});
 
 	return { output };
@@ -573,7 +575,7 @@ async function waitForPortFile_(opts: {
 				console.error('Could not delete port file: %j', opts.portFile);
 			});
 			return { port };
-		} catch (err) {
+		} catch (err: any) {
 			if (err.code !== 'ENOENT') {
 				throw err;
 			}
