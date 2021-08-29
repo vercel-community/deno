@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"name": "vercel-deno",
+			"path": "."
+		},
+		{
+			"name": "API Examples",
+			"path": "api"
+		},
+		{
+			"name": "Deno Runtime",
+			"path": "src/runtime"
+		}
+	],
+	"settings": {
+		"typescript.tsdk": "node_modules/typescript/lib",
+		"deno.suggest.imports.hosts": {
+			"https://deno.land": true
+		}
+	}
+}

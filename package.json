@@ -17,7 +17,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "tsc --project src/tsconfig.json",
-    "postbuild": "cpy src '!**/*.ts' dist && cpy src/runtime.ts src/dev-server.ts dist",
+    "postbuild": "cpy src '!**/*.ts' dist && cpy 'src/runtime/*.ts' dist",
     "now-build": "next build",
     "prepublishOnly": "npm run build",
     "test": "jest"
