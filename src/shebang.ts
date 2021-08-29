@@ -1,11 +1,10 @@
-import fs from 'fs';
 import arg from 'arg';
 import { keys } from 'ramda';
 import { bashShellParse } from 'shell-args';
 
-export async function parse(filePath: string) {
+export function parse(data: string) {
 	let argv: string[] = [];
-	const data = await fs.promises.readFile(filePath, 'utf8');
+	const env: { [name: string]: string } = {};
 	const firstLine = data.split('\n', 1)[0];
 
 	if (firstLine.startsWith('#!')) {
@@ -15,7 +14,20 @@ export async function parse(filePath: string) {
 		// Slice off the beginning args until an option is found
 		let start = 0;
 		for (; start < args.length; start++) {
-			if (args[start][0] === '-') break;
+			const arg = args[start];
+
+			if (arg.startsWith('-')) {
+				// Found an option, so stop searching
+				break;
+			}
+
+			const eqIndex = arg.indexOf('=');
+			if (eqIndex !== -1) {
+				// Found an env var, so add it to the map
+				const name = arg.slice(0, eqIndex);
+				const value = arg.slice(eqIndex + 1);
+				env[name] = value;
+			}
 		}
 		argv = args.slice(start);
 	}
@@ -54,7 +66,13 @@ export async function parse(filePath: string) {
 		value: iterator,
 	});
 
+	Object.defineProperty(args, "env", {
+		value: env,
+		enumerable: true,
+	});
+
 	return args as typeof args & {
+		env: typeof env;
 		[Symbol.iterator]: typeof iterator;
 	};
 }

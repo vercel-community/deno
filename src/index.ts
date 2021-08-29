@@ -120,7 +120,7 @@ export async function build({
 
 	const absEntrypoint = join(workPath, entrypoint);
 	const absEntrypointDir = dirname(absEntrypoint);
-	const args = await shebang.parse(absEntrypoint);
+	const args = shebang.parse(await fs.promises.readFile(absEntrypoint, 'utf8'));
 
 	const debug = configBool(config, 'debug', process.env, 'DEBUG') || false;
 
@@ -573,7 +573,7 @@ async function waitForPortFile_(opts: {
 				console.error('Could not delete port file: %j', opts.portFile);
 			});
 			return { port };
-		} catch (err) {
+		} catch (err: any) {
 			if (err.code !== 'ENOENT') {
 				throw err;
 			}

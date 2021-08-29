@@ -19,7 +19,8 @@
     "build": "tsc --project src/tsconfig.json",
     "postbuild": "cpy src '!**/*.ts' dist && cpy src/runtime.ts src/dev-server.ts dist",
     "now-build": "next build",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "jest"
   },
   "dependencies": {
     "@tootallnate/once": "^1.1.2",
@@ -29,6 +30,7 @@
     "yn": "^4.0.0"
   },
   "devDependencies": {
+    "@types/jest": "^27.0.1",
     "@types/node": "^14.14.27",
     "@types/ramda": "^0.27.40",
     "@types/react": "^17.0.2",
@@ -45,10 +47,26 @@
     "eslint-plugin-import": "2.22.1",
     "eslint-plugin-jsx-a11y": "6.4.1",
     "eslint-plugin-react": "7.22.0",
+    "jest": "^27.1.0",
     "next": "^11.1.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "rimraf": "^3.0.0",
+    "ts-jest": "^27.0.5",
     "typescript": "^4.1.5"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "globals": {
+      "ts-jest": {
+        "diagnostics": false,
+        "isolatedModules": true
+      }
+    },
+    "verbose": false,
+    "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/test/**/*.test.ts"
+    ]
   }
 }

@@ -104,10 +104,6 @@ async function processEvents(): Promise<void> {
 	}
 }
 
-async function initError(err: Error) {
-	return postError('init/error', err);
-}
-
 async function nextInvocation() {
 	const res = await request('invocation/next');
 
