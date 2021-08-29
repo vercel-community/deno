@@ -57,11 +57,10 @@ export default async (req: ServerRequest) => {
 
 There are also a few flags that can be used that are specific to `vercel-deno`:
 
- * `--version` - Specify a specific version of Deno to use. (A version is
- any valid Deno [release tag](https://github.com/denoland/deno/releases) — e.g. `v1.2.3`)
+ * `--version` - Specify a specific version of Deno to use (can be any valid Deno [release tag](https://github.com/denoland/deno/releases) — e.g. `v1.2.3`).
  * `--include-files` - Glob pattern of static files to include within the Serverless Function. Can be specified more than once.
 
-#### Endpoint-specific Environment Variables
+### Endpoint-specific Environment Variables
 
 It's also possible to specify environment variables that will apply only to a specific API endpoint by utilizing the shebang. Just place the environment variables before the `deno` command in the shebang. For example:
 
