@@ -1,12 +1,11 @@
 import * as base64 from 'https://deno.land/x/base64@v0.2.1/mod.ts';
 import * as stdHttpServer from 'https://deno.land/std@0.105.0/http/server.ts';
 import { TextProtoReader } from 'https://deno.land/std@0.105.0/textproto/mod.ts';
+import { readerFromStreamReader } from 'https://deno.land/std@0.105.0/io/streams.ts';
 import {
 	BufReader,
 	BufWriter,
 } from 'https://deno.land/std@0.105.0/io/bufio.ts';
-import { readerFromStreamReader } from 'https://deno.land/std@0.105.0/io/streams.ts';
-import { Context } from 'https://denopkg.com/DefinitelyTyped/DefinitelyTyped/types/aws-lambda/handler.d.ts';
 
 export interface HeadersObj {
 	[name: string]: string;
@@ -182,7 +181,7 @@ async function processEvents(): Promise<void> {
 	let handler: Handler | null = null;
 
 	while (true) {
-		const { event, context } = await nextInvocation();
+		const { event, awsRequestId } = await nextInvocation();
 		let result;
 		try {
 			if (!handler) {
@@ -209,10 +208,10 @@ async function processEvents(): Promise<void> {
 			result = await req.waitForResult();
 		} catch (e) {
 			console.error('Invoke Error:', e);
-			await invokeError(e, context);
+			await invokeError(e, awsRequestId);
 			continue;
 		}
-		await invokeResponse(result, context);
+		await invokeResponse(result, awsRequestId);
 	}
 }
 
@@ -224,8 +223,6 @@ async function nextInvocation() {
 			`Unexpected "/invocation/next" response: ${JSON.stringify(res)}`
 		);
 	}
-
-	const deadlineMs = Number(res.headers.get('lambda-runtime-deadline-ms'));
 
 	const traceId = res.headers.get('lambda-runtime-trace-id');
 	if (typeof traceId === 'string') {
@@ -241,47 +238,15 @@ async function nextInvocation() {
 		);
 	}
 
-	const invokedFunctionArn = res.headers.get(
-		'lambda-runtime-invoked-function-arn'
-	);
-	if (typeof invokedFunctionArn !== 'string') {
-		throw new Error(
-			'Did not receive "lambda-runtime-invoked-function-arn" header'
-		);
-	}
-
-	const context: Context = {
-		callbackWaitsForEmptyEventLoop: false,
-		logGroupName: AWS_LAMBDA_LOG_GROUP_NAME,
-		logStreamName: AWS_LAMBDA_LOG_STREAM_NAME,
-		functionName: AWS_LAMBDA_FUNCTION_NAME,
-		memoryLimitInMB: AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
-		functionVersion: AWS_LAMBDA_FUNCTION_VERSION,
-		awsRequestId,
-		invokedFunctionArn,
-		getRemainingTimeInMillis: () => deadlineMs - Date.now(),
-		done: (error?: Error, result?: any): void => {},
-		fail: (error: Error | string): void => {},
-		succeed: (messageOrObject: any, obj?: any): void => {},
-	};
-
-	const clientContext = res.headers.get('lambda-runtime-client-context');
-	if (clientContext) {
-		context.clientContext = JSON.parse(clientContext);
-	}
-
-	const cognitoIdentity = res.headers.get('lambda-runtime-cognito-identity');
-	if (cognitoIdentity) {
-		context.identity = JSON.parse(cognitoIdentity);
-	}
-
 	const event = JSON.parse(res.body);
-
-	return { event, context };
+	return { event, awsRequestId };
 }
 
-async function invokeResponse(result: any, context: Context) {
-	const res = await request(`invocation/${context.awsRequestId}/response`, {
+async function invokeResponse(
+	result: VercelResponsePayload,
+	awsRequestId: string
+) {
+	const res = await request(`invocation/${awsRequestId}/response`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -295,8 +260,8 @@ async function invokeResponse(result: any, context: Context) {
 	}
 }
 
-async function invokeError(err: Error, context: Context) {
-	return postError(`invocation/${context.awsRequestId}/error`, err);
+async function invokeError(err: Error, awsRequestId: string) {
+	return postError(`invocation/${awsRequestId}/error`, err);
 }
 
 async function postError(path: string, err: Error): Promise<void> {
