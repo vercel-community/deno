@@ -120,7 +120,9 @@ export async function build({
 
 	const absEntrypoint = join(workPath, entrypoint);
 	const absEntrypointDir = dirname(absEntrypoint);
-	const args = shebang.parse(await fs.promises.readFile(absEntrypoint, 'utf8'));
+	const args = shebang.parse(
+		await fs.promises.readFile(absEntrypoint, 'utf8')
+	);
 
 	const debug = configBool(config, 'debug', process.env, 'DEBUG') || false;
 
@@ -401,7 +403,7 @@ export async function build({
 		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided.al2',
-		environment: args.env
+		environment: args.env,
 	});
 
 	return { output };

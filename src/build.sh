@@ -7,7 +7,7 @@ export DENO_DIR="$ROOT_DIR/.deno"
 DENO_BIN_DIR="$DENO_DIR/bin"
 mkdir -p "$DENO_BIN_DIR"
 export PATH="$DENO_BIN_DIR:$PATH"
-PLATFORM=unknown-linux-gnu
+PLATFORM="unknown-linux-gnu"
 
 # Download `deno`
 cd "$DENO_BIN_DIR"

@@ -66,7 +66,7 @@ export function parse(data: string) {
 		value: iterator,
 	});
 
-	Object.defineProperty(args, "env", {
+	Object.defineProperty(args, 'env', {
 		value: env,
 		enumerable: true,
 	});
