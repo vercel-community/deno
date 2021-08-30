@@ -224,8 +224,6 @@ async function nextInvocation() {
 		);
 	}
 
-	const deadlineMs = Number(res.headers.get('lambda-runtime-deadline-ms'));
-
 	const traceId = res.headers.get('lambda-runtime-trace-id');
 	if (typeof traceId === 'string') {
 		Deno.env.set('_X_AMZN_TRACE_ID', traceId);
@@ -237,15 +235,6 @@ async function nextInvocation() {
 	if (typeof awsRequestId !== 'string') {
 		throw new Error(
 			'Did not receive "lambda-runtime-aws-request-id" header'
-		);
-	}
-
-	const invokedFunctionArn = res.headers.get(
-		'lambda-runtime-invoked-function-arn'
-	);
-	if (typeof invokedFunctionArn !== 'string') {
-		throw new Error(
-			'Did not receive "lambda-runtime-invoked-function-arn" header'
 		);
 	}
 
