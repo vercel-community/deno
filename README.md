@@ -19,7 +19,7 @@ every time an HTTP request is received.
 Create a file called `api/hello.ts` with the following contents:
 
 ```typescript
-import { ServerRequest } from "https://deno.land/std@0.98.0/http/server.ts";
+import { ServerRequest } from "https://deno.land/std@0.105.0/http/server.ts";
 
 export default async (req: ServerRequest) => {
 	req.respond({ body: `Hello, from Deno v${Deno.version.deno}!` });
@@ -48,7 +48,7 @@ For example, to set the `window.location` object and use a specific tsconfig:
 
 ```typescript
 #!/usr/bin/env deno run --location http://example.com/path --config other-tsconfig.json
-import { ServerRequest } from "https://deno.land/std@0.98.0/http/server.ts";
+import { ServerRequest } from "https://deno.land/std@0.105.0/http/server.ts";
 
 export default async (req: ServerRequest) => {
 	req.respond({ body: `Location is ${window.location.href}!` });
