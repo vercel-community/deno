@@ -1,13 +1,41 @@
 import * as base64 from 'https://deno.land/x/base64@v0.2.1/mod.ts';
+import * as stdHttpServer from 'https://deno.land/std@0.105.0/http/server.ts';
 import { TextProtoReader } from 'https://deno.land/std@0.105.0/textproto/mod.ts';
-import { BufReader, BufWriter } from 'https://deno.land/std@0.105.0/io/bufio.ts';
 import {
-	ServerRequest,
-	Response,
-} from 'https://deno.land/std@0.105.0/http/server.ts';
+	BufReader,
+	BufWriter,
+} from 'https://deno.land/std@0.105.0/io/bufio.ts';
+import { readerFromStreamReader } from 'https://deno.land/std@0.105.0/io/streams.ts';
 import { Context } from 'https://denopkg.com/DefinitelyTyped/DefinitelyTyped/types/aws-lambda/handler.d.ts';
 
-type Handler = (req: ServerRequest) => Promise<Response | void>;
+export interface HeadersObj {
+	[name: string]: string;
+}
+
+export interface RequestEvent {
+	readonly request: Request;
+	respondWith(r: Response | Promise<Response>): Promise<void>;
+}
+
+export interface VercelRequestPayload {
+	method: string;
+	path: string;
+	headers: HeadersObj;
+	body: string;
+}
+
+export interface VercelResponsePayload {
+	statusCode: number;
+	headers: HeadersObj;
+	encoding: 'base64';
+	body: string;
+}
+
+export type StdHandler = (
+	req: stdHttpServer.ServerRequest
+) => Promise<stdHttpServer.Response | void>;
+export type NativeHandler = (event: RequestEvent) => Promise<Response | void>;
+export type Handler = StdHandler | NativeHandler;
 
 const RUNTIME_PATH = '2018-06-01/runtime';
 
@@ -23,6 +51,132 @@ const {
 } = Deno.env.toObject();
 
 Deno.env.delete('SHLVL');
+
+function headersToObject(headers: Headers): HeadersObj {
+	const obj: HeadersObj = {};
+	for (const [name, value] of headers.entries()) {
+		obj[name] = value;
+	}
+	return obj;
+}
+
+class Deferred<T> {
+	promise: Promise<T>;
+	resolve!: (v: T) => void;
+	reject!: (v: any) => void;
+
+	constructor() {
+		this.promise = new Promise<T>((res, rej) => {
+			this.resolve = res;
+			this.reject = rej;
+		});
+	}
+}
+
+class VercelRequest
+	extends stdHttpServer.ServerRequest
+	implements RequestEvent {
+	readonly request: Request;
+	#response: Deferred<Response>;
+	#output: Deno.Buffer;
+
+	constructor(data: VercelRequestPayload) {
+		super();
+
+		this.#response = new Deferred();
+
+		// Request headers
+		const headers = new Headers();
+		for (const [name, value] of Object.entries(data.headers)) {
+			if (typeof value === 'string') {
+				headers.set(name, value);
+			}
+			// TODO: handle multi-headers?
+		}
+
+		const base = `${headers.get('x-forwarded-proto')}://${headers.get(
+			'x-forwarded-host'
+		)}`;
+		const url = new URL(data.path, base);
+
+		// Native HTTP server interface
+		this.request = new Request(url.href, {
+			headers,
+			method: data.method,
+		});
+
+		// Legacy `std` HTTP server interface
+		const input = new Deno.Buffer(base64.toUint8Array(data.body || ''));
+		this.#output = new Deno.Buffer(new Uint8Array(6000000)); // 6 MB
+
+		// req.conn
+		this.r = new BufReader(input, input.length);
+		this.method = data.method;
+		this.url = data.path;
+		this.proto = 'HTTP/1.1';
+		this.protoMinor = 1;
+		this.protoMajor = 1;
+		this.headers = headers;
+		this.w = new BufWriter(this.#output);
+	}
+
+	respondWith = async (r: Response | Promise<Response>): Promise<void> => {
+		const response = await r;
+		this.#response.resolve(response);
+	};
+
+	async waitForStdResponse(): Promise<VercelResponsePayload> {
+		const responseError = await this.done;
+		if (responseError) {
+			throw responseError;
+		}
+
+		const bufr = new BufReader(this.#output, this.#output.length);
+		const tp = new TextProtoReader(bufr);
+		const firstLine = await tp.readLine(); // e.g. "HTTP/1.1 200 OK"
+		if (firstLine === null) throw new Deno.errors.UnexpectedEof();
+
+		const resHeaders = await tp.readMIMEHeader();
+		if (resHeaders === null) throw new Deno.errors.UnexpectedEof();
+
+		const body = await bufr.readFull(new Uint8Array(bufr.buffered()));
+		if (!body) throw new Deno.errors.UnexpectedEof();
+
+		await this.finalize();
+
+		return {
+			statusCode: parseInt(firstLine.split(' ', 2)[1], 10),
+			headers: headersToObject(resHeaders),
+			encoding: 'base64',
+			body: base64.fromUint8Array(body),
+		};
+	}
+
+	async waitForNativeResponse(): Promise<VercelResponsePayload> {
+		const res = await this.#response.promise;
+
+		const reader = res.body?.getReader();
+		let body = '';
+		if (reader) {
+			const bytes = await Deno.readAll(readerFromStreamReader(reader));
+			body = base64.fromUint8Array(bytes);
+		}
+
+		return {
+			statusCode: res.status,
+			headers: headersToObject(res.headers),
+			encoding: 'base64',
+			body,
+		};
+	}
+
+	waitForResult(): Promise<VercelResponsePayload> {
+		return Promise.race([
+			this.waitForStdResponse(),
+			this.waitForNativeResponse(),
+		]);
+	}
+}
 
 async function processEvents(): Promise<void> {
 	let handler: Handler | null = null;
@@ -40,61 +194,19 @@ async function processEvents(): Promise<void> {
 			}
 
 			const data = JSON.parse(event.body);
-			const input = new Deno.Buffer(base64.toUint8Array(data.body || ''));
-			const output = new Deno.Buffer(new Uint8Array(6000000)); // 6 MB
-
-			const req = new ServerRequest();
-			// req.conn
-			req.r = new BufReader(input, input.length);
-			req.method = data.method;
-			req.url = data.path;
-			req.proto = 'HTTP/1.1';
-			req.protoMinor = 1;
-			req.protoMajor = 1;
-			req.headers = new Headers();
-			for (const [name, value] of Object.entries(data.headers)) {
-				if (typeof value === 'string') {
-					req.headers.set(name, value);
-				}
-				// TODO: handle multi-headers?
-			}
-			req.w = new BufWriter(output);
+			const req = new VercelRequest(data);
 
 			// Run user code
 			const res = await handler(req);
 			if (res) {
-				req.respond(res);
+				if (res instanceof Response) {
+					req.respondWith(res);
+				} else {
+					req.respond(res);
+				}
 			}
 
-			const responseError = await req.done;
-			if (responseError) {
-				throw responseError;
-			}
-
-			const bufr = new BufReader(output, output.length);
-			const tp = new TextProtoReader(bufr);
-			const firstLine = await tp.readLine(); // e.g. "HTTP/1.1 200 OK"
-			if (firstLine === null) throw new Deno.errors.UnexpectedEof();
-
-			const headers = await tp.readMIMEHeader();
-			if (headers === null) throw new Deno.errors.UnexpectedEof();
-
-			const headersObj: { [name: string]: string } = {};
-			for (const [name, value] of headers.entries()) {
-				headersObj[name] = value;
-			}
-
-			const body = await bufr.readFull(new Uint8Array(bufr.buffered()));
-			if (!body) throw new Deno.errors.UnexpectedEof();
-
-			await req.finalize();
-
-			result = {
-				statusCode: parseInt(firstLine.split(' ', 2)[1], 10),
-				headers: headersObj,
-				encoding: 'base64',
-				body: base64.fromUint8Array(body),
-			};
+			result = await req.waitForResult();
 		} catch (e) {
 			console.error('Invoke Error:', e);
 			await invokeError(e, context);
