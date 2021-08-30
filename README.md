@@ -19,11 +19,7 @@ every time an HTTP request is received.
 Create a file called `api/hello.ts` with the following contents:
 
 ```typescript
-import { ServerRequest } from "https://deno.land/std@0.105.0/http/server.ts";
-
-export default async (req: ServerRequest) => {
-	req.respond({ body: `Hello, from Deno v${Deno.version.deno}!` });
-};
+export default async () => new Response(`Hello, from Deno v${Deno.version.deno}!`);
 ```
 
 Next, define the **vercel-deno** runtime within the "functions" object in your
@@ -44,15 +40,12 @@ Next, define the **vercel-deno** runtime within the "functions" object in your
 To configure which flags are passed to `deno run`, a [shebang](https://wikipedia.org/wiki/Shebang_(Unix)) needs to be defined in
 the entrypoint of the Serverless Function containing the flags that will be used.
 
-For example, to set the `window.location` object and use a specific tsconfig:
+For example, to set the `window.location` object, and use a specific tsconfig file:
 
 ```typescript
 #!/usr/bin/env deno run --location http://example.com/path --config other-tsconfig.json
-import { ServerRequest } from "https://deno.land/std@0.105.0/http/server.ts";
 
-export default async (req: ServerRequest) => {
-	req.respond({ body: `Location is ${window.location.href}!` });
-};
+export default async () => new Response(`Location is ${window.location.href}!`);
 ```
 
 There are also a few flags that can be used that are specific to `vercel-deno`:
@@ -69,6 +62,23 @@ It's also possible to specify environment variables that will apply only to a sp
 ```
 
 In this example, the `FOO` environment variable will be set to "bar" and `ANOTHER` will be set to "spaces work too" for only this endpoint.
+
+### Dynamic Imports
+
+By default, dynamic imports (using the `import()` function during runtime) _**will fail**_. For most use-cases, this is fine since this feature is only necessary for rare use-cases.
+
+However, when dynamic imports _are_ required for your endpoint, the `DENO_DIR` enviorment variable will need to be set to "/tmp". This is required because the file system is read-only, within the Serverless Function runtime environment, _except_ for the "/tmp" dir. Because dynamic imports will require compilation at runtime, the deno cache directorry need to be writable.
+
+The recommended way of enabling this is to add an environment variable to the endpoint's shebang. For example:
+
+```typescript
+#!/usr/bin/env DENO_DIR=/tmp deno run
+
+export default async () => {
+	const mod = await import('http://example.com/mod.ts');
+	return new Response(mod.default.doThing());
+}
+```
 
 ## Development
 
