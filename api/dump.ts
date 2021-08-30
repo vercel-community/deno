@@ -1,7 +1,7 @@
 #!/usr/bin/env deno run --location https://example.com/page
 
 import ms from 'https://denopkg.com/TooTallNate/ms';
-import { ServerRequest } from 'https://deno.land/std@0.105.0/http/server.ts';
+import { readerFromStreamReader } from 'https://deno.land/std@0.105.0/io/streams.ts';
 
 // Importing relative files works as expected
 import { foo } from '../src/foo.ts';
@@ -32,7 +32,7 @@ function urlToObject(url: URL) {
 		port: url.port || undefined,
 		pathname: url.pathname || undefined,
 		search: url.search || undefined,
-		hash: url.hash || undefined
+		hash: url.hash || undefined,
 	};
 }
 
@@ -47,13 +47,20 @@ function sortObject<T extends HeadersObject>(obj: T): T {
 	return sorted;
 }
 
-export default async (req: ServerRequest) => {
+export default async ({ request }: Deno.RequestEvent) => {
 	const now = new Date();
 	const uptime = now.getTime() - startTime.getTime();
-	const base = `${req.headers.get('x-forwarded-proto')}://${req.headers.get('x-forwarded-host')}`;
-	const url = new URL(req.url, base);
-	const status = parseInt(url.searchParams.get('statusCode') ?? '', 10) || 200;
-	const { NOW_REGION, AWS_REGION }  = Deno.env.toObject();
+	const url = new URL(request.url);
+	const status =
+		parseInt(url.searchParams.get('statusCode') ?? '', 10) || 200;
+
+	const env = Deno.env.toObject();
+	for (const key of Object.keys(env)) {
+		if (/^_?AWS/.test(key)) {
+			delete env[key];
+		}
+	}
+
 	const body = {
 		now: now.getTime(),
 		bootup: startTime.getTime(),
@@ -62,13 +69,19 @@ export default async (req: ServerRequest) => {
 		bootupHuman: startTime.toUTCString(),
 		uptimeHuman: ms(uptime),
 		request: {
-			method: req.method,
+			method: request.method,
 			url: urlToObject(url),
-			headers: sortObject(headersToObject(req.headers)),
-			body: new TextDecoder().decode(await Deno.readAll(req.body)),
+			headers: sortObject(headersToObject(request.headers)),
+			body: request.body
+				? new TextDecoder().decode(
+						await Deno.readAll(
+							readerFromStreamReader(request.body.getReader())
+						)
+				  )
+				: null,
 		},
 		response: {
-			status
+			status,
 		},
 		deno: {
 			pid: Deno.pid,
@@ -76,17 +89,16 @@ export default async (req: ServerRequest) => {
 			execPath: Deno.execPath(),
 			version: Deno.version,
 			build: Deno.build,
-			env: { NOW_REGION, AWS_REGION },
+			env: sortObject(env),
 		},
 		location: window.location,
 		foo,
 	};
 	console.log(body);
-	const headers = new Headers();
-	headers.set('Content-Type', 'application/json; charset=utf8');
-	req.respond({
+	return new Response(JSON.stringify(body, null, 2), {
 		status,
-		headers,
-		body: JSON.stringify(body, null, 2),
+		headers: {
+			'Content-Type': 'application/json; charset=utf8',
+		},
 	});
 };

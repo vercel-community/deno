@@ -1,1 +1,1 @@
-export default () => new Request(`Hello, from Deno v${Deno.version.deno}!`);
+export default () => new Response(`Hello, from Deno v${Deno.version.deno}!`);
