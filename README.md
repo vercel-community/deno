@@ -77,7 +77,7 @@ The recommended way of enabling this is to add an environment variable to the en
 #!/usr/bin/env FOO=bar ANOTHER="spaces work too" deno run
 
 export default () => {
-	const mod = await import('http://example.com/)
+	const mod = await import('http://example.com/mod.ts');
 	return new Response(mod.default.doThing());
 }
 ```
