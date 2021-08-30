@@ -72,7 +72,7 @@ However, when dynamic imports _are_ required for your endpoint, the `DENO_DIR` e
 The recommended way of enabling this is to add an environment variable to the endpoint's shebang. For example:
 
 ```typescript
-#!/usr/bin/env DENO_DIR=/tmp
+#!/usr/bin/env DENO_DIR=/tmp deno run
 
 export default async () => {
 	const mod = await import('http://example.com/mod.ts');
