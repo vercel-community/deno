@@ -40,14 +40,12 @@ Next, define the **vercel-deno** runtime within the "functions" object in your
 To configure which flags are passed to `deno run`, a [shebang](https://wikipedia.org/wiki/Shebang_(Unix)) needs to be defined in
 the entrypoint of the Serverless Function containing the flags that will be used.
 
-For example, to set the `window.location` object and use a specific tsconfig:
+For example, to set the `window.location` object, and use a specific tsconfig file:
 
 ```typescript
 #!/usr/bin/env deno run --location http://example.com/path --config other-tsconfig.json
 
-export default async () => {
-	return new Response(`Location is ${window.location.href}!`);
-};
+export default async () => new Response(`Location is ${window.location.href}!`);
 ```
 
 There are also a few flags that can be used that are specific to `vercel-deno`:
@@ -76,7 +74,7 @@ The recommended way of enabling this is to add an environment variable to the en
 ```typescript
 #!/usr/bin/env DENO_DIR=/tmp
 
-export default () => {
+export default async () => {
 	const mod = await import('http://example.com/mod.ts');
 	return new Response(mod.default.doThing());
 }
