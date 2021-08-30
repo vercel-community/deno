@@ -1,9 +1,14 @@
 #!/bin/bash
 set -euo pipefail
-cd "$LAMBDA_TASK_ROOT"
 
-export DENO_DIR="$LAMBDA_TASK_ROOT/.deno"
-export PATH="$DENO_DIR/bin:$PATH"
 export HOME="$(eval echo "~")"
+export PATH="$LAMBDA_TASK_ROOT/.deno/bin:$PATH"
+
+if [ -n "${DENO_DIR-}" ]; then
+    mkdir -p "$DENO_DIR"
+    cp -r "$LAMBDA_TASK_ROOT/.deno/"* "$DENO_DIR"
+else
+    export DENO_DIR="$LAMBDA_TASK_ROOT/.deno"
+fi
 
 exec deno run $args ".runtime.ts"
