@@ -201,9 +201,10 @@ async function processEvents(): Promise<void> {
 			}
 
 			result = await req.waitForResult();
-		} catch (e) {
-			console.error('Invoke Error:', e);
-			await invokeError(e, awsRequestId);
+		} catch (e: unknown) {
+			const err = e instanceof Error ? e : new Error(String(e));
+			console.error(err);
+			await invokeError(err, awsRequestId);
 			continue;
 		}
 		await invokeResponse(result, awsRequestId);
