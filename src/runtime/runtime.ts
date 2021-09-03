@@ -1,11 +1,11 @@
-import * as base64 from 'https://deno.land/x/base64@v0.2.1/mod.ts';
-import * as stdHttpServer from 'https://deno.land/std@0.105.0/http/server.ts';
-import { TextProtoReader } from 'https://deno.land/std@0.105.0/textproto/mod.ts';
-import { readerFromStreamReader } from 'https://deno.land/std@0.105.0/io/streams.ts';
+import * as base64 from 'https://deno.land/std@0.106.0/encoding/base64.ts';
+import * as stdHttpServer from 'https://deno.land/std@0.106.0/http/server.ts';
+import { TextProtoReader } from 'https://deno.land/std@0.106.0/textproto/mod.ts';
+import { readerFromStreamReader } from 'https://deno.land/std@0.106.0/io/streams.ts';
 import {
 	BufReader,
 	BufWriter,
-} from 'https://deno.land/std@0.105.0/io/bufio.ts';
+} from 'https://deno.land/std@0.106.0/io/bufio.ts';
 
 export interface HeadersObj {
 	[name: string]: string;
@@ -100,7 +100,7 @@ class VercelRequest
 		});
 
 		// Legacy `std` HTTP server interface
-		const input = new Deno.Buffer(base64.toUint8Array(data.body || ''));
+		const input = new Deno.Buffer(base64.decode(data.body || ''));
 		this.#output = new Deno.Buffer(new Uint8Array(6000000)); // 6 MB
 
 		// req.conn
@@ -142,7 +142,7 @@ class VercelRequest
 			statusCode: parseInt(firstLine.split(' ', 2)[1], 10),
 			headers: headersToObject(resHeaders),
 			encoding: 'base64',
-			body: base64.fromUint8Array(body),
+			body: base64.encode(body),
 		};
 	}
 
@@ -153,7 +153,7 @@ class VercelRequest
 		let body = '';
 		if (reader) {
 			const bytes = await Deno.readAll(readerFromStreamReader(reader));
-			body = base64.fromUint8Array(bytes);
+			body = base64.encode(bytes);
 		}
 
 		return {
