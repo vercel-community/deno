@@ -3,9 +3,6 @@
 import ms from 'https://denopkg.com/TooTallNate/ms';
 import { readerFromStreamReader } from 'https://deno.land/std@0.106.0/io/streams.ts';
 
-// Importing relative files works as expected
-import { foo } from '../src/foo.ts';
-
 interface HeadersObject {
 	[name: string]: any;
 }
@@ -36,12 +33,10 @@ function urlToObject(url: URL) {
 	};
 }
 
-function sortObject<T extends HeadersObject>(obj: T): T {
-	// @ts-ignore
+function sortObject<T extends object>(obj: T): T {
 	const sorted: T = Object.create(Object.getPrototypeOf(obj));
-	const keys = Object.keys(obj).sort();
+	const keys = Object.keys(obj).sort() as (keyof T)[];
 	for (const k of keys) {
-		// @ts-ignore
 		sorted[k] = obj[k];
 	}
 	return sorted;
@@ -92,7 +87,6 @@ export default async ({ request }: Deno.RequestEvent) => {
 			env: sortObject(env),
 		},
 		location: window.location,
-		foo,
 	};
 	console.log(body);
 	return new Response(JSON.stringify(body, null, 2), {
