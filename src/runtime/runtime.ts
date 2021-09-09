@@ -38,11 +38,7 @@ export type Handler = StdHandler | NativeHandler;
 
 const RUNTIME_PATH = '2018-06-01/runtime';
 
-const {
-	_HANDLER,
-	ENTRYPOINT,
-	AWS_LAMBDA_RUNTIME_API,
-} = Deno.env.toObject();
+const { _HANDLER, ENTRYPOINT, AWS_LAMBDA_RUNTIME_API } = Deno.env.toObject();
 
 Deno.env.delete('SHLVL');
 
