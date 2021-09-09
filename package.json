@@ -15,9 +15,9 @@
     "dist"
   ],
   "scripts": {
-    "prebuild": "rimraf dist",
+    "prebuild": "rm -rfv dist",
     "build": "tsc --project src/tsconfig.json",
-    "postbuild": "cpy src '!**/*.ts' dist && cpy 'src/runtime/*.ts' dist",
+    "postbuild": "cp -v src/bootstrap src/build.sh src/runtime/*.ts dist",
     "now-build": "next build",
     "prepublishOnly": "npm run build",
     "test": "jest"
@@ -30,6 +30,7 @@
     "yn": "^4.0.0"
   },
   "devDependencies": {
+    "@types/glob": "^7.1.4",
     "@types/jest": "^27.0.1",
     "@types/node": "^14.14.27",
     "@types/ramda": "^0.27.40",
@@ -39,7 +40,6 @@
     "@vercel/build-utils": "^2.9.0",
     "@vercel/frameworks": "^0.2.0",
     "@vercel/routing-utils": "^1.9.2",
-    "cpy-cli": "^3.1.1",
     "eslint": "7.19.0",
     "eslint-config-airbnb": "18.2.1",
     "eslint-config-next": "11.1.2",
@@ -52,7 +52,6 @@
     "next": "^11.1.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
-    "rimraf": "^3.0.0",
     "ts-jest": "^27.0.5",
     "typescript": "^4.1.5"
   },
