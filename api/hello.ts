@@ -1,1 +1,2 @@
-export default () => new Response(`Hello, from Deno v${Deno.version.deno}!`);
+const handler = () => new Response(`Hello, from Deno v${Deno.version.deno}!`);
+export default handler;
