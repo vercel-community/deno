@@ -1,11 +1,11 @@
-import * as base64 from 'https://deno.land/std@0.106.0/encoding/base64.ts';
-import * as stdHttpServer from 'https://deno.land/std@0.106.0/http/server.ts';
-import { TextProtoReader } from 'https://deno.land/std@0.106.0/textproto/mod.ts';
-import { readerFromStreamReader } from 'https://deno.land/std@0.106.0/io/streams.ts';
+import * as base64 from 'https://deno.land/std@0.107.0/encoding/base64.ts';
+import * as stdHttpServer from 'https://deno.land/std@0.107.0/http/server.ts';
+import { TextProtoReader } from 'https://deno.land/std@0.107.0/textproto/mod.ts';
+import { readerFromStreamReader } from 'https://deno.land/std@0.107.0/io/streams.ts';
 import {
 	BufReader,
 	BufWriter,
-} from 'https://deno.land/std@0.106.0/io/bufio.ts';
+} from 'https://deno.land/std@0.107.0/io/bufio.ts';
 
 export interface HeadersObj {
 	[name: string]: string;

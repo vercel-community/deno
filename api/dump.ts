@@ -1,7 +1,7 @@
 #!/usr/bin/env deno run --location https://example.com/page
 
 import ms from 'https://denopkg.com/TooTallNate/ms';
-import { readerFromStreamReader } from 'https://deno.land/std@0.106.0/io/streams.ts';
+import { readerFromStreamReader } from 'https://deno.land/std@0.107.0/io/streams.ts';
 
 interface HeadersObject {
 	[name: string]: any;
