@@ -21,6 +21,7 @@ import {
 import * as shebang from './shebang';
 import { isURL } from './util';
 import { bashShellQuote } from 'shell-args';
+import { AbortController, AbortSignal } from 'abort-controller';
 
 const { stat, readdir, readFile, writeFile, unlink } = fs.promises;
 
@@ -212,7 +213,7 @@ export async function build({
 		cwd: workPath,
 		stdio: 'inherit',
 	});
-	const code = await once(cp, 'exit');
+	const [code] = await once(cp, 'exit');
 	if (code !== 0) {
 		throw new Error(`Build script failed with exit code ${code}`);
 	}
@@ -523,53 +524,42 @@ export async function startDevServer({
 		throw new Error('Not readable');
 	}
 
+	const controller = new AbortController();
+	const { signal } = controller;
 	const onPort = new Promise<PortInfo>((resolve) => {
 		portPipe.setEncoding('utf8');
 		portPipe.once('data', (d) => {
 			resolve({ port: Number(d) });
 		});
 	});
-	const onPortFile = waitForPortFile(portFile);
-	const onExit = once.spread<[number, string | null]>(child, 'exit');
-	const result = await Promise.race([onPort, onPortFile, onExit]);
-	onExit.cancel();
-	onPortFile.cancel();
+	const onPortFile = waitForPortFile({ portFile, signal });
+	const onExit = once(child, 'exit', { signal });
+	try {
+		const result = await Promise.race([onPort, onPortFile, onExit]);
 
-	if (isPortInfo(result)) {
-		return {
-			port: result.port,
-			pid: child.pid,
-		};
-	} else if (Array.isArray(result)) {
-		// Got "exit" event from child process
-		throw new Error(
-			`Failed to start dev server for "${entrypoint}" (code=${result[0]}, signal=${result[1]})`
-		);
-	} else {
-		throw new Error('Unexpected error');
+		if (isPortInfo(result)) {
+			return {
+				port: result.port,
+				pid: child.pid,
+			};
+		} else if (Array.isArray(result)) {
+			// Got "exit" event from child process
+			throw new Error(
+				`Failed to start dev server for "${entrypoint}" (code=${result[0]}, signal=${result[1]})`
+			);
+		} else {
+			throw new Error('Unexpected error');
+		}
+	} finally {
+		controller.abort();
 	}
 }
 
-export interface CancelablePromise<T> extends Promise<T> {
-	cancel: () => void;
-}
-
-function waitForPortFile(portFile: string) {
-	const opts = { portFile, canceled: false };
-	const promise = waitForPortFile_(
-		opts
-	) as CancelablePromise<PortInfo | void>;
-	promise.cancel = () => {
-		opts.canceled = true;
-	};
-	return promise;
-}
-
-async function waitForPortFile_(opts: {
+async function waitForPortFile(opts: {
 	portFile: string;
-	canceled: boolean;
+	signal: AbortSignal;
 }): Promise<PortInfo | void> {
-	while (!opts.canceled) {
+	while (!opts.signal.aborted) {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		try {
 			const port = Number(await readFile(opts.portFile, 'ascii'));
