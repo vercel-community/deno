@@ -482,7 +482,7 @@ export async function startDevServer({
 		VERCEL_DEV_PORT_FILE: portFile,
 	};
 
-	const args = await shebang.parse(absEntrypoint);
+	const args = await shebang.parse(await readFile(absEntrypoint, "utf8"));
 
 	// @deprecated
 	if (unstable) {
