@@ -32,17 +32,3 @@ cp ${DEBUG:+-v} "$BUILDER/runtime.ts" "$ROOT_DIR"
 echo "Caching imports for \"$ENTRYPOINT\"…"
 echo "deno run $* $ENTRYPOINT"
 ENTRYPOINT="$PWD/$ENTRYPOINT" deno run "$@" "$BUILDER/runtime.ts"
-
-# Move the `gen` files to match AWS `/var/task`
-#mkdir -p${DEBUG:+v} "$DENO_DIR/gen/file/var"
-#mv ${DEBUG:+-v} "$DENO_DIR/gen/file$PWD" "$DENO_DIR/gen/file/var/task"
-#rm -rf${DEBUG:+v} "$DENO_DIR/gen/file/$(echo "$PWD" | awk -F'/' '{print $2}')"
-
-#if [ -n "${DEBUG-}" ]; then
-#	eval "$(curl -sfLS https://import.sh)"
-#	import "static-binaries"
-#	static_binaries tree
-#	echo
-#	echo "Final Lambda tree:"
-#	tree -a .
-#fi
