@@ -1,18 +1,18 @@
-[<img src="https://og-image.vercel.app/**vercel-deno**.png?theme=light&md=1&fontSize=100px&images=https%3A%2F%2Fassets.vercel.com%2Fimage%2Fupload%2Ffront%2Fassets%2Fdesign%2Fvercel-triangle-black.svg&images=https%3A%2F%2Fgithub.com%2Fdenolib%2Fhigh-res-deno-logo%2Fraw%2Fmaster%2Fdeno_hr_circle.svg&widths=184&widths=220&heights=160&heights=220">](https://github.com/TooTallNate/vercel-deno)
+[<img src="https://og-image.vercel.app/Vercel%20Plugin:%20**Deno**.png?theme=light&md=1&fontSize=100px&images=https%3A%2F%2Fassets.vercel.com%2Fimage%2Fupload%2Ffront%2Fassets%2Fdesign%2Fvercel-triangle-black.svg&images=https%3A%2F%2Fgithub.com%2Fdenolib%2Fhigh-res-deno-logo%2Fraw%2Fmaster%2Fdeno_hr_circle.svg&widths=184&widths=220&heights=160&heights=220">](https://github.com/vercel-community/deno)
 
-The Deno Runtime compiles a TypeScript or JavaScript function into a serverless
-function powered by [Deno](https://deno.land), running on
+This Vercel Plugin compiles TypeScript or JavaScript functions into Serverless
+Functions powered by [Deno](https://deno.land), running on
 [Vercel](https://vercel.com).
 
 ## Usage
 
 Your serverless function file is expected to `export default` the HTTP handler
-function, and then `vercel-deno` takes care of invoking that handler function
-every time an HTTP request is received.
+function, and then `vercel-plugin-deno` takes care of invoking that handler
+function every time an HTTP request is received.
 
 > **Note:** Check out the [`api`](./api) directory to see examples of using
-> popular Deno web frameworks with `vercel-deno`. Feel free to send a pull request
-> to add additional examples!
+> popular Deno web frameworks with `vercel-plugin-deno`. Feel free to send a
+> pull request to add additional examples!
 
 #### Example
 
