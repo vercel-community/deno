@@ -23,3 +23,15 @@ export interface BuildInfo {
 	program: Program;
 	version: string;
 }
+
+export interface FunctionsManifest {
+	pages?: {
+		[entrypoint: string]: {
+			memory?: number;
+			handler?: string;
+			runtime?: string;
+			regions?: string[];
+			maxDuration?: number;
+		};
+	};
+}

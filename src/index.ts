@@ -20,7 +20,7 @@ import {
 } from '@vercel/build-utils';
 import * as shebang from './shebang';
 import { isURL } from './util';
-import { Env, Graph, BuildInfo } from './types';
+import { Env, Graph, BuildInfo, FunctionsManifest } from './types';
 
 const {
 	copyFile,
@@ -52,20 +52,18 @@ export async function build() {
 
 export async function buildEntrypoint(entrypoint: string) {
 	const cwd = process.cwd();
-	const workPath = join(
-		cwd,
-		".output/server/pages",
+	const outputPath = join(cwd, '.output');
+	const entrypointWithoutExt = join(
 		dirname(entrypoint),
 		basename(entrypoint, extname(entrypoint))
 	);
+	const workPath = join(outputPath, 'server/pages', entrypointWithoutExt);
 	console.log(`Compiling ${entrypoint} to ${workPath}`);
 	await mkdir(workPath, { recursive: true });
 
 	const absEntrypoint = resolve(entrypoint);
 	const absEntrypointDir = dirname(absEntrypoint);
-	const args = shebang.parse(
-		await readFile(absEntrypoint, 'utf8')
-	);
+	const args = shebang.parse(await readFile(absEntrypoint, 'utf8'));
 
 	const debug = yn(process.env.DEBUG) || false;
 
@@ -134,7 +132,10 @@ export async function buildEntrypoint(entrypoint: string) {
 	// Write the generated `bootstrap` file
 	const origBootstrapPath = join(__dirname, 'bootstrap');
 	const origBootstrapData = await readFile(origBootstrapPath, 'utf8');
-	const bootstrapData = origBootstrapData.replace('$args', bashShellQuote(argv));
+	const bootstrapData = origBootstrapData.replace(
+		'$args',
+		bashShellQuote(argv)
+	);
 	await writeFile(join(workPath, 'bootstrap'), bootstrapData, {
 		mode: fs.statSync(origBootstrapPath).mode,
 	});
@@ -157,7 +158,7 @@ export async function buildEntrypoint(entrypoint: string) {
 		console.log(` - ${filename}`);
 		const dest = join(workPath, filename);
 		await mkdir(dirname(dest), { recursive: true });
-		await copyFile(filename, dest)
+		await copyFile(filename, dest);
 	}
 
 	if (includeFiles.length > 0) {
@@ -165,39 +166,50 @@ export async function buildEntrypoint(entrypoint: string) {
 		for (const pattern of includeFiles) {
 			const matches = await globby(pattern);
 			for (const filename of matches) {
-					console.log(` - ${filename}`);
-					const dest = join(workPath, filename);
-					await mkdir(dirname(dest), { recursive: true });
-					await copyFile(filename, dest);
-					//outputFiles[name] = matches[name];
+				console.log(` - ${filename}`);
+				const dest = join(workPath, filename);
+				await mkdir(dirname(dest), { recursive: true });
+				await copyFile(filename, dest);
+				//outputFiles[name] = matches[name];
 			}
 		}
 	}
 
-	// TODO: Update `functions-manifest.json`
-
-	//const output = await createLambda({
-	//	files: outputFiles,
-	//	handler: entrypoint,
-	//	runtime: 'provided.al2',
-	//	environment: args.env,
-	//});
+	const functionsManifestPath = join(outputPath, 'functions-manifest.json');
+	let functionsManifest: FunctionsManifest = {};
+	try {
+		functionsManifest = JSON.parse(
+			await readFile(functionsManifestPath, 'utf8')
+		);
+	} catch (_err) {
+		// ignore...
+	}
+	if (!functionsManifest.pages) functionsManifest.pages = {};
+	functionsManifest.pages[entrypointWithoutExt] = {
+		handler: entrypoint,
+		runtime: 'provided.al2',
+		//	environment: args.env,
+	};
+	await writeFile(
+		functionsManifestPath,
+		JSON.stringify(functionsManifest, null, 2)
+	);
 }
 
 async function moveCacheFiles(
 	genFileDir: string,
 	oldPath: string,
 	newPath: string,
-	sourceFiles?: Set<string>,
+	sourceFiles?: Set<string>
 ) {
 	const workPathUri = `file://${oldPath}`;
 
-	for await (const file of getFilesWithExtension(genFileDir, ".graph")) {
+	for await (const file of getFilesWithExtension(genFileDir, '.graph')) {
 		let needsWrite = false;
-		const graph: Graph = JSON.parse(await readFile(file, "utf8"));
+		const graph: Graph = JSON.parse(await readFile(file, 'utf8'));
 		for (let i = 0; i < graph.deps.length; i++) {
 			const dep = graph.deps[i];
-			if (typeof dep === "string" && dep.startsWith(workPathUri)) {
+			if (typeof dep === 'string' && dep.startsWith(workPathUri)) {
 				const relative = dep.substring(workPathUri.length + 1);
 				const updated = `file://${newPath}/${relative}`;
 				graph.deps[i] = updated;
@@ -206,14 +218,14 @@ async function moveCacheFiles(
 			}
 		}
 		if (needsWrite) {
-			console.log("Patched %j", file);
+			console.log('Patched %j', file);
 			await writeFile(file, JSON.stringify(graph, null, 2));
 		}
 	}
 
-	for await (const file of getFilesWithExtension(genFileDir, ".buildinfo")) {
+	for await (const file of getFilesWithExtension(genFileDir, '.buildinfo')) {
 		let needsWrite = false;
-		const buildInfo: BuildInfo = JSON.parse(await readFile(file, "utf8"));
+		const buildInfo: BuildInfo = JSON.parse(await readFile(file, 'utf8'));
 		const {
 			fileNames = [],
 			fileInfos,
@@ -224,7 +236,7 @@ async function moveCacheFiles(
 
 		for (const filename of Object.keys(fileInfos)) {
 			if (
-				typeof filename === "string" &&
+				typeof filename === 'string' &&
 				filename.startsWith(workPathUri)
 			) {
 				const relative = filename.substring(workPathUri.length + 1);
@@ -239,7 +251,7 @@ async function moveCacheFiles(
 		for (const [filename, refs] of Object.entries(referencedMap)) {
 			for (let i = 0; i < refs.length; i++) {
 				const ref = refs[i];
-				if (typeof ref === "string" && ref.startsWith(workPathUri)) {
+				if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
 					const relative = ref.substring(workPathUri.length + 1);
 					const updated = `file://${newPath}/${relative}`;
 					refs[i] = updated;
@@ -249,7 +261,7 @@ async function moveCacheFiles(
 			}
 
 			if (
-				typeof filename === "string" &&
+				typeof filename === 'string' &&
 				filename.startsWith(workPathUri)
 			) {
 				const relative = filename.substring(workPathUri.length + 1);
@@ -264,7 +276,7 @@ async function moveCacheFiles(
 		for (const [filename, refs] of Object.entries(exportedModulesMap)) {
 			for (let i = 0; i < refs.length; i++) {
 				const ref = refs[i];
-				if (typeof ref === "string" && ref.startsWith(workPathUri)) {
+				if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
 					const relative = ref.substring(workPathUri.length + 1);
 					const updated = `file://${newPath}/${relative}`;
 					refs[i] = updated;
@@ -274,7 +286,7 @@ async function moveCacheFiles(
 			}
 
 			if (
-				typeof filename === "string" &&
+				typeof filename === 'string' &&
 				filename.startsWith(workPathUri)
 			) {
 				const relative = filename.substring(workPathUri.length + 1);
@@ -288,7 +300,7 @@ async function moveCacheFiles(
 
 		for (let i = 0; i < fileNames.length; i++) {
 			const ref = fileNames[i];
-			if (typeof ref === "string" && ref.startsWith(workPathUri)) {
+			if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
 				const relative = ref.substring(workPathUri.length + 1);
 				const updated = `file://${newPath}/${relative}`;
 				fileNames[i] = updated;
@@ -299,7 +311,7 @@ async function moveCacheFiles(
 
 		for (let i = 0; i < semanticDiagnosticsPerFile.length; i++) {
 			const ref = semanticDiagnosticsPerFile[i];
-			if (typeof ref === "string" && ref.startsWith(workPathUri)) {
+			if (typeof ref === 'string' && ref.startsWith(workPathUri)) {
 				const relative = ref.substring(workPathUri.length + 1);
 				const updated = `file://${newPath}/${relative}`;
 				semanticDiagnosticsPerFile[i] = updated;
@@ -309,7 +321,7 @@ async function moveCacheFiles(
 		}
 
 		if (needsWrite) {
-			console.log("Patched %j", file.substring(genFileDir.length));
+			console.log('Patched %j', file.substring(genFileDir.length));
 			await writeFile(file, JSON.stringify(buildInfo, null, 2));
 		}
 	}
