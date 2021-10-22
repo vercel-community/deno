@@ -6,7 +6,7 @@ const DEFAULT_DENO_VERSION = 'v1.15.2';
 import fs from 'fs';
 import yn from 'yn';
 import globby from 'globby';
-import { basename, dirname, extname, join, relative, resolve } from 'path';
+import { join, dirname, relative, resolve, parse as pathParse } from 'path';
 import { tmpdir } from 'os';
 import { spawn } from 'child_process';
 import { Readable } from 'stream';
@@ -53,9 +53,14 @@ export async function build() {
 export async function buildEntrypoint(entrypoint: string) {
 	const cwd = process.cwd();
 	const outputPath = join(cwd, '.output');
+	const { dir, name } = pathParse(entrypoint);
 	const entrypointWithoutExt = join(
-		dirname(entrypoint),
-		basename(entrypoint, extname(entrypoint))
+		dir,
+		name,
+		// "index" is enforced as a suffix so that nesting works properly
+		// i.e. "api/foo.ts"     -> "api/foo/index"
+		//      "api/foo/bar.ts" -> "api/foo/bar/index"
+		name === 'index' ? '' : 'index'
 	);
 	const workPath = join(outputPath, 'server/pages', entrypointWithoutExt);
 	console.log(`Compiling ${entrypoint} to ${workPath}`);
