@@ -15,7 +15,7 @@
     "dist"
   ],
   "scripts": {
-    "prebuild": "rm -rfv dist",
+    "prebuild": "rm -rf dist",
     "build": "tsc --project src/tsconfig.json",
     "postbuild": "cp -v src/bootstrap src/build.sh src/runtime/*.ts dist",
     "now-build": "next build",
