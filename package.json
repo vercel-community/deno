@@ -1,7 +1,7 @@
 {
-  "name": "vercel-deno",
+  "name": "vercel-plugin-deno",
   "version": "1.1.1",
-  "description": "Vercel Runtime for Deno serverless functions",
+  "description": "Vercel CLI Plugin for Deno serverless functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "Nathan Rajlich <nate@vercel.com>",
