@@ -25,7 +25,8 @@ export interface BuildInfo {
 }
 
 export interface FunctionsManifest {
-	pages?: {
+	version: 1;
+	pages: {
 		[entrypoint: string]: {
 			memory?: number;
 			handler?: string;
