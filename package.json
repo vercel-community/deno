@@ -1,6 +1,6 @@
 {
   "name": "vercel-plugin-deno",
-  "version": "1.1.1",
+  "version": "1.1.1-plugin.4",
   "description": "Vercel CLI Plugin for Deno serverless functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

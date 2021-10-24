@@ -136,8 +136,8 @@ export async function buildEntrypoint(entrypoint: string, config: BaseFunctionCo
 	// Patch the `.graph` files to use file paths beginning with `/var/task`
 	// to hot-fix a Deno issue (https://github.com/denoland/deno/issues/6080).
 	const genFileDir = join(workPath, '.deno/gen/file');
-	await moveCacheFiles(genFileDir, cwd, '/var/task', sourceFiles);
 	await moveCacheFiles(genFileDir, __dirname, '/var/task');
+	await moveCacheFiles(genFileDir, cwd, '/var/task', sourceFiles);
 
 	// Write the generated `bootstrap` file
 	const origBootstrapPath = join(__dirname, 'bootstrap');
