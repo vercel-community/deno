@@ -18,8 +18,10 @@ import {
 	StartDevServerResult,
 	shouldServe,
 } from '@vercel/build-utils';
+import { Project } from 'ts-morph';
 import * as shebang from './shebang';
 import { isURL } from './util';
+import { getConfig, BaseFunctionConfig } from '@vercel/static-config';
 import { Env, Graph, BuildInfo, FunctionsManifest } from './types';
 
 const {
@@ -44,13 +46,16 @@ fs.chmodSync(join(__dirname, 'bootstrap'), 0o755);
 export { shouldServe };
 
 export async function build() {
+	const project = new Project();
 	const entrypoints = await globby('api/**/*.[jt]s');
 	for (const entrypoint of entrypoints) {
-		await buildEntrypoint(entrypoint);
+		const config = getConfig(project, entrypoint);
+		if (config?.runtime !== 'deno') continue;
+		await buildEntrypoint(entrypoint, config);
 	}
 }
 
-export async function buildEntrypoint(entrypoint: string) {
+export async function buildEntrypoint(entrypoint: string, config: BaseFunctionConfig) {
 	const cwd = process.cwd();
 	const outputPath = join(cwd, '.output');
 	const { dir, name } = pathParse(entrypoint);
@@ -175,7 +180,6 @@ export async function buildEntrypoint(entrypoint: string) {
 				const dest = join(workPath, filename);
 				await mkdir(dirname(dest), { recursive: true });
 				await copyFile(filename, dest);
-				//outputFiles[name] = matches[name];
 			}
 		}
 	}
@@ -194,6 +198,9 @@ export async function buildEntrypoint(entrypoint: string) {
 	functionsManifest.pages[entrypointWithoutExt] = {
 		handler: entrypoint,
 		runtime: 'provided.al2',
+		memory: config.memory,
+		maxDuration: config.maxDuration,
+		regions: config.regions,
 		//	environment: args.env,
 	};
 	await writeFile(

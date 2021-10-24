@@ -1,4 +1,10 @@
-#!/usr/bin/env DENO_DIR=/tmp deno run --include-files ../util/**/*
+export const config = {
+	runtime: 'deno',
+	env: {
+		DENO_DIR: '/tmp'
+	},
+	includeFiles: ['../util/**/*']
+};
 
 export default async ({ request }: Deno.RequestEvent) => {
 	const name = new URL(request.url).searchParams.get('name') ?? 'a';

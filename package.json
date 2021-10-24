@@ -24,11 +24,13 @@
   },
   "dependencies": {
     "@tootallnate/once": "^2.0.0",
+    "@vercel/static-config": "^0.0.0",
     "abort-controller": "^3.0.0",
     "arg": "^5.0.0",
     "globby": "^11",
     "ramda": "^0.27.1",
     "shell-args": "^1.0.0",
+    "ts-morph": "^12.0.0",
     "yn": "^4.0.0"
   },
   "devDependencies": {
