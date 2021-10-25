@@ -28,6 +28,7 @@
     "abort-controller": "^3.0.0",
     "arg": "^5.0.0",
     "globby": "^11",
+    "json-schema-to-ts": "^1.6.4",
     "ramda": "^0.27.1",
     "shell-args": "^1.0.0",
     "ts-morph": "^12.0.0",

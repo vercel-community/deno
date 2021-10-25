@@ -1,9 +1,9 @@
 export const config = {
 	runtime: 'deno',
 	env: {
-		DENO_DIR: '/tmp'
+		DENO_DIR: '/tmp',
 	},
-	includeFiles: ['../util/**/*']
+	includeFiles: ['../util/**/*'],
 };
 
 export default async ({ request }: Deno.RequestEvent) => {

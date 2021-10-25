@@ -1,5 +1,5 @@
 export const config = {
-    runtime: 'deno'
+	runtime: 'deno',
 };
 
 export default (req) => {

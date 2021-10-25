@@ -3,8 +3,8 @@ import { readerFromStreamReader } from 'https://deno.land/std@0.107.0/io/streams
 
 export const config = {
 	runtime: 'deno',
-	location: 'https://example.com/page'
-}
+	args: ['--location', 'https://example.com/page'],
+};
 
 interface HeadersObject {
 	[name: string]: any;

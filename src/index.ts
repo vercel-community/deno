@@ -5,7 +5,9 @@ const DEFAULT_DENO_VERSION = 'v1.15.2';
 
 import fs from 'fs';
 import yn from 'yn';
+import arg from 'arg';
 import globby from 'globby';
+import { keys } from 'ramda';
 import { join, dirname, relative, resolve, parse as pathParse } from 'path';
 import { tmpdir } from 'os';
 import { spawn } from 'child_process';
@@ -19,9 +21,10 @@ import {
 	shouldServe,
 } from '@vercel/build-utils';
 import { Project } from 'ts-morph';
-import * as shebang from './shebang';
+import { FromSchema } from 'json-schema-to-ts';
+import { getConfig, BaseFunctionConfigSchema } from '@vercel/static-config';
 import { isURL } from './util';
-import { getConfig, BaseFunctionConfig } from '@vercel/static-config';
+import * as shebang from './shebang';
 import { Env, Graph, BuildInfo, FunctionsManifest } from './types';
 
 const {
@@ -38,6 +41,31 @@ const {
 
 const TMP = tmpdir();
 
+const FunctionConfigSchema = {
+	type: 'object',
+	additionalProperties: false,
+	properties: {
+		...BaseFunctionConfigSchema.properties,
+
+		// Deno version
+		version: { type: 'string' },
+
+		// `deno run` args
+		args: { type: 'array', items: { type: 'string' } },
+
+		// TODO: move to @vercel/static-config
+		includeFiles: {
+			oneOf: [
+				{ type: 'string' },
+				{ type: 'array', items: { type: 'string' } },
+			],
+		},
+		env: { type: 'object', additionalProperties: { type: 'string' } },
+	},
+} as const;
+
+type FunctionConfig = FromSchema<typeof FunctionConfigSchema>;
+
 // `chmod()` is required for usage with `vercel-dev-runtime` since
 // file mode is not preserved in Vercel deployments from the CLI.
 fs.chmodSync(join(__dirname, 'build.sh'), 0o755);
@@ -49,13 +77,16 @@ export async function build() {
 	const project = new Project();
 	const entrypoints = await globby('api/**/*.[jt]s');
 	for (const entrypoint of entrypoints) {
-		const config = getConfig(project, entrypoint);
+		const config = getConfig(project, entrypoint, FunctionConfigSchema);
 		if (config?.runtime !== 'deno') continue;
 		await buildEntrypoint(entrypoint, config);
 	}
 }
 
-export async function buildEntrypoint(entrypoint: string, config: BaseFunctionConfig) {
+export async function buildEntrypoint(
+	entrypoint: string,
+	config: FunctionConfig
+) {
 	const cwd = process.cwd();
 	const outputPath = join(cwd, '.output');
 	const { dir, name } = pathParse(entrypoint);
@@ -73,20 +104,17 @@ export async function buildEntrypoint(entrypoint: string, config: BaseFunctionCo
 
 	const absEntrypoint = resolve(entrypoint);
 	const absEntrypointDir = dirname(absEntrypoint);
-	const args = shebang.parse(await readFile(absEntrypoint, 'utf8'));
 
 	const debug = yn(process.env.DEBUG) || false;
 
-	let denoVersion = args['--version'] || DEFAULT_DENO_VERSION;
-	delete args['--version'];
-
+	let denoVersion = config.version || DEFAULT_DENO_VERSION;
 	if (!denoVersion.startsWith('v')) {
 		denoVersion = `v${denoVersion}`;
 	}
 
-	const env: Env = {
+	const buildEnv: Env = {
 		...process.env,
-		...args.env,
+		...config.env,
 		BUILDER: __dirname,
 		ROOT_DIR: workPath,
 		ENTRYPOINT: entrypoint,
@@ -94,8 +122,22 @@ export async function buildEntrypoint(entrypoint: string, config: BaseFunctionCo
 	};
 
 	if (debug) {
-		env.DEBUG = '1';
+		buildEnv.DEBUG = '1';
 	}
+
+	const sourceFiles = new Set<string>();
+	sourceFiles.add(entrypoint);
+
+	const args = arg(
+		{
+			'--cert': String,
+			'--config': String,
+			'-c': '--config',
+			'--import-map': String,
+			'--lock': String,
+		},
+		{ argv: config.args || [], permissive: true }
+	);
 
 	// Flags that accept file paths are relative to the entrypoint in
 	// the source file, but `deno run` is executed at the root directory
@@ -108,30 +150,22 @@ export async function buildEntrypoint(entrypoint: string, config: BaseFunctionCo
 	] as const) {
 		const val = args[flag];
 		if (typeof val === 'string' && !isURL(val)) {
-			args[flag] = relative(cwd, resolve(absEntrypointDir, val));
+			const rel = relative(cwd, resolve(absEntrypointDir, val));
+			args[flag] = rel;
+			sourceFiles.add(rel);
 		}
 	}
 
-	// This flag is specific to `vercel-deno`, so it does not
-	// get included in the args that are passed to `deno run`
-	const includeFiles = (args['--include-files'] || []).map((f) => {
-		return relative(cwd, join(absEntrypointDir, f));
-	});
-	delete args['--include-files'];
-
-	const argv = ['--allow-all', ...args];
+	const argv = ['--allow-all', ...argToArray(args)];
 	const builderPath = join(__dirname, 'build.sh');
 	const cp = spawn(builderPath, argv, {
-		env,
+		env: buildEnv,
 		stdio: 'inherit',
 	});
 	const [code] = await once(cp, 'exit');
 	if (code !== 0) {
 		throw new Error(`Build script failed with exit code ${code}`);
 	}
-
-	const sourceFiles = new Set<string>();
-	sourceFiles.add(entrypoint);
 
 	// Patch the `.graph` files to use file paths beginning with `/var/task`
 	// to hot-fix a Deno issue (https://github.com/denoland/deno/issues/6080).
@@ -142,25 +176,20 @@ export async function buildEntrypoint(entrypoint: string, config: BaseFunctionCo
 	// Write the generated `bootstrap` file
 	const origBootstrapPath = join(__dirname, 'bootstrap');
 	const origBootstrapData = await readFile(origBootstrapPath, 'utf8');
-	const bootstrapData = origBootstrapData.replace(
-		'$args',
-		bashShellQuote(argv)
-	);
+	const bootstrapData = origBootstrapData
+		.replace(
+			'$env',
+			Object.keys(config.env || {})
+				.map(
+					(name) =>
+						`export ${name}=${bashShellQuote([config.env![name]!])}`
+				)
+				.join('\n')
+		)
+		.replace('$args', bashShellQuote(argv));
 	await writeFile(join(workPath, 'bootstrap'), bootstrapData, {
 		mode: fs.statSync(origBootstrapPath).mode,
 	});
-
-	for (const flag of [
-		'--cert',
-		'--config',
-		'--import-map',
-		'--lock',
-	] as const) {
-		const val = args[flag];
-		if (typeof val === 'string' && !isURL(val)) {
-			sourceFiles.add(val);
-		}
-	}
 
 	// Copy the necessary source files into the output work path
 	console.log('Detected source files:');
@@ -170,6 +199,13 @@ export async function buildEntrypoint(entrypoint: string, config: BaseFunctionCo
 		await mkdir(dirname(dest), { recursive: true });
 		await copyFile(filename, dest);
 	}
+
+	// Additional files to include in the output Serverless Function
+	const includeFiles = (
+		(typeof config.includeFiles === 'string'
+			? [config.includeFiles]
+			: config.includeFiles) ?? []
+	).map((f) => relative(cwd, join(absEntrypointDir, f)));
 
 	if (includeFiles.length > 0) {
 		console.log('Including additional files:');
@@ -495,4 +531,18 @@ async function waitForPortFile(opts: {
 			}
 		}
 	}
+}
+
+function* argToArray<T extends arg.Spec>(args: arg.Result<T>) {
+	for (const key of keys(args)) {
+		if (key === '_') continue;
+		const val = args[key];
+		if (typeof val === 'boolean' && val) {
+			yield key;
+		} else if (typeof val === 'string') {
+			yield key;
+			yield val;
+		}
+	}
+	yield* args._;
 }

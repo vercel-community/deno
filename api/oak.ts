@@ -1,5 +1,9 @@
 import { Application } from 'https://deno.land/x/oak@v9.0.0/mod.ts';
 
+export const config = {
+	runtime: 'deno',
+};
+
 const app = new Application();
 
 app.use((ctx) => {

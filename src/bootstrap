@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+$env
+
 export HOME="$(eval echo "~")"
 export PATH="$LAMBDA_TASK_ROOT/.deno/bin:$PATH"
 
