@@ -1,7 +1,7 @@
 /**
  * The default version of Deno that will be downloaded at build-time.
  */
-const DEFAULT_DENO_VERSION = 'v1.14.3';
+const DEFAULT_DENO_VERSION = 'v1.18.0';
 
 import fs from 'fs';
 import yn from 'yn';
