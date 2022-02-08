@@ -126,7 +126,7 @@ export async function build({
 	const absEntrypoint = join(workPath, entrypoint);
 	const absEntrypointDir = dirname(absEntrypoint);
 	const args = shebang.parse(
-		await fs.promises.readFile(absEntrypoint, 'utf8')
+		await readFile(absEntrypoint, 'utf8')
 	);
 
 	const debug = configBool(config, 'debug', process.env, 'DEBUG') || false;
@@ -482,7 +482,7 @@ export async function startDevServer({
 		VERCEL_DEV_PORT_FILE: portFile,
 	};
 
-	const args = await shebang.parse(await readFile(absEntrypoint, "utf8"));
+	const args = shebang.parse(await readFile(absEntrypoint, "utf8"));
 
 	// @deprecated
 	if (unstable) {
