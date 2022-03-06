@@ -16,7 +16,6 @@ if (typeof handler !== 'function') {
 
 // Spawn HTTP server on ephemeral port
 const conn = await Deno.listen({ port: 0 });
-const s = Deno.serveHttp(await conn.accept());
 
 if (isNetAddr(conn.addr)) {
 	const { port } = conn.addr;
@@ -39,6 +38,7 @@ if (isNetAddr(conn.addr)) {
 	}
 }
 
+const s = Deno.serveHttp(await conn.accept());
 // Serve HTTP requests to handler function
 for await (const req of s) {
 	Promise.resolve(handler(req)).then((res: Response | void) => {
