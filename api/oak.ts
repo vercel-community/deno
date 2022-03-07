@@ -7,4 +7,4 @@ app.use((ctx) => {
 	console.log(ctx);
 });
 
-export default app.handle;
+export default ({ request }: Deno.RequestEvent) => app.handle(request) as Promise<Response>;
