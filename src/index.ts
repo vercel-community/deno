@@ -18,7 +18,7 @@ import {
 	FileFsRef,
 	StartDevServerOptions,
 	StartDevServerResult,
-	createLambda,
+	Lambda,
 	download,
 	glob,
 	shouldServe,
@@ -60,8 +60,14 @@ const TMP = tmpdir();
 
 // `chmod()` is required for usage with `vercel-dev-runtime` since
 // file mode is not preserved in Vercel deployments from the CLI.
+
+// TODO: remove
 fs.chmodSync(join(__dirname, 'build.sh'), 0o755);
-fs.chmodSync(join(__dirname, 'bootstrap'), 0o755);
+
+const bootstrapPath = join(__dirname, 'bootstrap');
+fs.chmodSync(bootstrapPath, 0o755);
+const bootstrapData = fs.readFileSync(bootstrapPath, 'utf8');
+const bootstrapMode = fs.statSync(bootstrapPath).mode;
 
 function configBool(
 	config: Config,
@@ -351,16 +357,14 @@ export async function build({
 		}
 	}
 
-	const bootstrapData = (
-		await readFile(join(workPath, 'bootstrap'), 'utf8')
-	).replace('$args', bashShellQuote(argv));
+	const bootstrapDataWithArgs = bootstrapData.replace('$args', bashShellQuote(argv));
 
 	const outputFiles: Files = {
 		bootstrap: new FileBlob({
-			data: bootstrapData,
-			mode: fs.statSync(join(workPath, 'bootstrap')).mode,
+			data: bootstrapDataWithArgs,
+			mode: bootstrapMode
 		}),
-		...(await glob('.deno/**/*', workPath)),
+		//...(await glob('.deno/**/*', workPath)),
 	};
 
 	for (const flag of [
@@ -404,7 +408,7 @@ export async function build({
 		}
 	}
 
-	const output = await createLambda({
+	const output = new Lambda({
 		files: outputFiles,
 		handler: entrypoint,
 		runtime: 'provided.al2',

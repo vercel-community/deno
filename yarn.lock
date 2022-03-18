@@ -897,10 +897,10 @@
     "@typescript-eslint/types" "4.31.0"
     eslint-visitor-keys "^2.0.0"
 
-"@vercel/build-utils@^2.9.0":
-  version "2.12.2"
-  resolved "https://registry.yarnpkg.com/@vercel/build-utils/-/build-utils-2.12.2.tgz#285a3bb0b78864fb6f44478257bd275c57aa8651"
-  integrity sha512-KbSgG2ZCVXhUsdbnpv6gC7buygd31jaKiKhrd4Lzv1NwjnoeDZAXlm4hzvSPYHVtCY2jirKJWP2rFtMW8iAh9g==
+"@vercel/build-utils@^2.14.1-canary.5":
+  version "2.14.1-canary.5"
+  resolved "https://registry.yarnpkg.com/@vercel/build-utils/-/build-utils-2.14.1-canary.5.tgz#77fa1917881fd0fcb9ad8580f688d58be9fff06f"
+  integrity sha512-ODFmy9K8FyJMpeCthtjmnzg2ooU2U/bApQhZ9sicVuDzXSdxJQj5uJLWe4mLdtcInzXCmWLFypy5ou4yBZ92ng==
 
 "@vercel/frameworks@^0.2.0":
   version "0.2.0"

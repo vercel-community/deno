@@ -38,7 +38,7 @@
     "@types/react": "^17.0.2",
     "@typescript-eslint/eslint-plugin": "4.15.0",
     "@typescript-eslint/parser": "4.15.0",
-    "@vercel/build-utils": "^2.9.0",
+    "@vercel/build-utils": "^2.14.1-canary.5",
     "@vercel/frameworks": "^0.2.0",
     "@vercel/routing-utils": "^1.9.2",
     "eslint": "7.19.0",
