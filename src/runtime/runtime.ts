@@ -300,5 +300,5 @@ if (_HANDLER) {
 	});
 } else {
 	// Build - import the entrypoint so that it gets cached
-	await import(`./${ENTRYPOINT}`);
+	await import(ENTRYPOINT);
 }

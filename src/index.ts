@@ -4,129 +4,79 @@
 const DEFAULT_DENO_VERSION = 'v1.20.1';
 
 import fs from 'fs';
-import yn from 'yn';
 import { dirname, join, relative, resolve } from 'path';
 import { tmpdir } from 'os';
 import { spawn } from 'child_process';
 import { Readable } from 'stream';
 import once from '@tootallnate/once';
 import {
-	BuildOptions,
-	Config,
+	Env,
 	Files,
 	FileBlob,
 	FileFsRef,
-	StartDevServerOptions,
-	StartDevServerResult,
 	Lambda,
 	download,
 	glob,
 	shouldServe,
+	BuildV3,
+	StartDevServer,
 } from '@vercel/build-utils';
 import * as shebang from './shebang';
 import { isURL } from './util';
+import { configBool, configString } from './config';
+import { downloadDeno } from './download-deno';
 import { bashShellQuote } from 'shell-args';
 import { AbortController, AbortSignal } from 'abort-controller';
 
-const { stat, readdir, readFile, writeFile, unlink } = fs.promises;
+//const { stat, readdir, readFile, writeFile, unlink } = fs.promises;
+const { readFile, unlink } = fs.promises;
 
-type Env = typeof process.env;
+//interface Graph {
+//	deps: string[];
+//	version_hash: string;
+//}
 
-interface Graph {
-	deps: string[];
-	version_hash: string;
-}
+//interface FileInfo {
+//	version: string;
+//	signature: string;
+//	affectsGlobalScope: boolean;
+//}
 
-interface FileInfo {
-	version: string;
-	signature: string;
-	affectsGlobalScope: boolean;
-}
+//interface Program {
+//	fileNames?: string[];
+//	fileInfos: { [name: string]: FileInfo };
+//	referencedMap: { [name: string]: string[] };
+//	exportedModulesMap: { [name: string]: string[] };
+//	semanticDiagnosticsPerFile?: string[];
+//}
 
-interface Program {
-	fileNames?: string[];
-	fileInfos: { [name: string]: FileInfo };
-	referencedMap: { [name: string]: string[] };
-	exportedModulesMap: { [name: string]: string[] };
-	semanticDiagnosticsPerFile?: string[];
-}
-
-interface BuildInfo {
-	program: Program;
-	version: string;
-}
+//interface BuildInfo {
+//	program: Program;
+//	version: string;
+//}
 
 const TMP = tmpdir();
 
+const bootstrapPath = join(__dirname, 'bootstrap');
+
 // `chmod()` is required for usage with `vercel-dev-runtime` since
 // file mode is not preserved in Vercel deployments from the CLI.
-
-// TODO: remove
-fs.chmodSync(join(__dirname, 'build.sh'), 0o755);
-
-const bootstrapPath = join(__dirname, 'bootstrap');
 fs.chmodSync(bootstrapPath, 0o755);
+
 const bootstrapData = fs.readFileSync(bootstrapPath, 'utf8');
 const bootstrapMode = fs.statSync(bootstrapPath).mode;
-
-function configBool(
-	config: Config,
-	configName: string,
-	env: Env,
-	envName: string
-): boolean | undefined {
-	const configVal = config[configName];
-	if (typeof configVal === 'boolean') {
-		return configVal;
-	}
-
-	if (typeof configVal === 'string' || typeof configVal === 'number') {
-		const d = yn(configVal);
-		if (typeof d === 'boolean') {
-			return d;
-		}
-	}
-
-	const envVal = env[envName];
-	if (typeof envVal === 'string') {
-		const d = yn(envVal);
-		if (typeof d === 'boolean') {
-			return d;
-		}
-	}
-}
-
-function configString(
-	config: Config,
-	configName: string,
-	env: Env,
-	envName: string
-): string | undefined {
-	const configVal = config[configName];
-	if (typeof configVal === 'string') {
-		return configVal;
-	}
-
-	const envVal = env[envName];
-	if (typeof envVal === 'string') {
-		return envVal;
-	}
-}
 
 export const version = 3;
 
 export { shouldServe };
 
-export async function build({
+export const build: BuildV3 = async ({
 	workPath,
 	files,
 	entrypoint,
 	meta = {},
 	config = {},
-}: BuildOptions) {
-	//const { devCacheDir = join(workPath, '.vercel', 'cache') } = meta;
-	//const distPath = join(devCacheDir, 'deno', entrypoint);
-
+}) => {
 	await download(files, workPath, meta);
 
 	const absEntrypoint = join(workPath, entrypoint);
@@ -166,21 +116,46 @@ export async function build({
 		}
 	}
 
-	if (denoVersion && !denoVersion.startsWith('v')) {
+	if (!denoVersion) {
+		denoVersion = DEFAULT_DENO_VERSION;
+	}
+
+	if (!denoVersion.startsWith('v')) {
 		denoVersion = `v${denoVersion}`;
 	}
+
+	const { devCacheDir = join(workPath, '.vercel', 'cache') } = meta;
+	const denoDir = join(devCacheDir, 'deno');
 
 	const env: Env = {
 		...process.env,
 		...args.env,
-		BUILDER: __dirname,
-		ENTRYPOINT: entrypoint,
-		DENO_VERSION: denoVersion || DEFAULT_DENO_VERSION,
+		DENO_DIR: denoDir,
+		ENTRYPOINT: join(workPath, entrypoint),
 	};
+
+	const [runtimeDeno, buildTimeDeno] = await Promise.all([
+		// For runtime, Linux 64-bit Deno binary will be downloaded
+		downloadDeno(denoDir, denoVersion, "linux", "x64"),
+		// If the build is being executed on a different OS/arch,
+		// then also download Deno binary for the build host
+		process.platform !== "linux" || process.arch !== "x64"
+			? downloadDeno(denoDir, denoVersion, process.platform, process.arch)
+			: undefined,
+	]);
+	console.log({ runtimeDeno, buildTimeDeno });
+
+	// Add build-time Deno version to $PATH
+	const origPath = env.PATH;
+	env.PATH = [
+		buildTimeDeno?.dir || runtimeDeno.dir,
+		origPath
+	].join(':');
 
 	if (debug) {
 		env.DEBUG = '1';
 	}
+	console.log(env);
 
 	// @deprecated
 	if (unstable) {
@@ -217,11 +192,12 @@ export async function build({
 	delete args['--include-files'];
 
 	const argv = ['--allow-all', ...args];
-	const builderPath = join(__dirname, 'build.sh');
-	const cp = spawn(builderPath, argv, {
+	console.log(`Caching imports…`);
+	console.log(`deno run ${argv.join(' ')} ${entrypoint}`);
+	const cp = spawn("deno", ["run", ...argv, join(__dirname, "runtime.ts")], {
 		env,
 		cwd: workPath,
-		stdio: 'inherit',
+		stdio: "inherit",
 	});
 	const [code] = await once(cp, 'exit');
 	if (code !== 0) {
@@ -233,6 +209,7 @@ export async function build({
 
 	// Patch the `.graph` files to use file paths beginning with `/var/task`
 	// to hot-fix a Deno issue (https://github.com/denoland/deno/issues/6080).
+	/*
 	const workPathUri = `file://${workPath}`;
 	const genFileDir = join(workPath, '.deno/gen/file');
 	for await (const file of getFilesWithExtension(genFileDir, '.graph')) {
@@ -356,14 +333,21 @@ export async function build({
 			await writeFile(file, JSON.stringify(buildInfo, null, 2));
 		}
 	}
+	*/
 
-	const bootstrapDataWithArgs = bootstrapData.replace('$args', bashShellQuote(argv));
+	const bootstrapDataWithArgs = bootstrapData.replace(
+		"$args",
+		bashShellQuote(argv)
+	);
 
 	const outputFiles: Files = {
 		bootstrap: new FileBlob({
 			data: bootstrapDataWithArgs,
 			mode: bootstrapMode
 		}),
+		'bin/deno': await FileFsRef.fromFsPath({
+			fsPath: join(runtimeDeno.dir, 'deno')
+		})
 		//...(await glob('.deno/**/*', workPath)),
 	};
 
@@ -408,6 +392,8 @@ export async function build({
 		}
 	}
 
+	console.log(outputFiles);
+
 	const output = new Lambda({
 		files: outputFiles,
 		handler: entrypoint,
@@ -418,6 +404,7 @@ export async function build({
 	return { output };
 }
 
+/*
 async function* getFilesWithExtension(
 	dir: string,
 	ext: string
@@ -435,6 +422,7 @@ async function* getFilesWithExtension(
 		}
 	}
 }
+*/
 
 interface PortInfo {
 	port: number;
@@ -448,12 +436,12 @@ function isReadable(v: any): v is Readable {
 	return v && v.readable === true;
 }
 
-export async function startDevServer({
+export const startDevServer: StartDevServer = async ({
 	entrypoint,
 	workPath,
 	config,
 	meta = {},
-}: StartDevServerOptions): Promise<StartDevServerResult> {
+}) => {
 	// @deprecated
 	const unstable =
 		configBool(
