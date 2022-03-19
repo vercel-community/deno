@@ -36,8 +36,7 @@ export async function downloadDeno(
 	try {
 		// If the Deno binary exists then it's already been downloaded,
 		// so no need to download again. TODO: shasum verification
-		const s = await stat(bin);
-		console.log(s);
+		await stat(bin);
 	} catch (err: any) {
 		if (err.code !== 'ENOENT') throw err;
 		const url = `https://github.com/denoland/deno/releases/download/${version}/deno-${arch}-${platform}.zip`;
