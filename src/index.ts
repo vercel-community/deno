@@ -124,7 +124,6 @@ export const build: BuildV3 = async ({
 			? downloadDeno(denoDir, denoVersion, process.platform, process.arch)
 			: undefined,
 	]);
-	console.log({ runtimeDeno, buildTimeDeno });
 
 	// Add build-time Deno version to $PATH
 	const origPath = env.PATH;
