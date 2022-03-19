@@ -65,7 +65,8 @@ class Deferred<T> {
 
 class VercelRequest
 	extends stdHttpServer.ServerRequest
-	implements RequestEvent {
+	implements RequestEvent
+{
 	readonly request: Request;
 	#response: Deferred<Response>;
 	#output: Deno.Buffer;
