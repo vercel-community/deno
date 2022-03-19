@@ -1,4 +1,4 @@
-import { writeAllSync } from 'https://deno.land/std@0.126.0/streams/conversion.ts';
+import { writeAllSync } from 'https://deno.land/std@0.130.0/streams/conversion.ts';
 
 function isNetAddr(v: any): v is Deno.NetAddr {
 	return v && typeof v.port === 'number';
