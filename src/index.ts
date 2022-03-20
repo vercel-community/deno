@@ -66,8 +66,6 @@ export const build: BuildV3 = async ({
 	const absEntrypointDir = dirname(absEntrypoint);
 	const args = shebang.parse(await readFile(absEntrypoint, 'utf8'));
 
-	const debug = configBool(config, 'debug', process.env, 'DEBUG') || false;
-
 	// @deprecated
 	const unstable =
 		configBool(config, 'denoUnstable', process.env, 'DENO_UNSTABLE') ||
@@ -128,11 +126,6 @@ export const build: BuildV3 = async ({
 	// Add build-time Deno version to $PATH
 	const origPath = env.PATH;
 	env.PATH = [buildTimeDeno?.dir || runtimeDeno.dir, origPath].join(':');
-
-	if (debug) {
-		env.DEBUG = '1';
-	}
-	console.log(env);
 
 	// @deprecated
 	if (unstable) {
