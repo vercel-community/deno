@@ -327,7 +327,6 @@ async function traceDenoInfo(
 			);
 
 			// Patch `.buildinfo` file with updated Deno dir file references
-			//await patchBuildInfo();
 			const buildInfoPath = join(
 				denoDir,
 				'gen/file',
