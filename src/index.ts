@@ -8,21 +8,22 @@ import { spawn } from 'child_process';
 import { dirname, join, relative, resolve } from 'path';
 import {
 	chmodSync,
-	readFileSync,
-	statSync,
 	readFile,
+	readFileSync,
 	readJSON,
+	statSync,
 } from 'fs-extra';
 import once from '@tootallnate/once';
 import {
+	BuildV3,
 	Env,
 	Files,
 	FileBlob,
 	FileFsRef,
 	Lambda,
+	PrepareCache,
 	download,
 	glob,
-	BuildV3,
 	streamToBuffer,
 } from '@vercel/build-utils';
 import * as shebang from './shebang';
@@ -413,3 +414,7 @@ async function traceDenoInfo(
 		}
 	}
 }
+
+export const prepareCache: PrepareCache = async ({ workPath }) => {
+	return await glob('.vercel/cache/deno/**', workPath);
+};
