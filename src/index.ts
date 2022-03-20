@@ -11,8 +11,6 @@ import {
 	readFileSync,
 	statSync,
 	readFile,
-	readdir,
-	stat,
 	readJSON,
 } from 'fs-extra';
 import once from '@tootallnate/once';
@@ -25,6 +23,7 @@ import {
 	download,
 	glob,
 	BuildV3,
+	streamToBuffer,
 } from '@vercel/build-utils';
 import * as shebang from './shebang';
 import { isURL } from './util';
@@ -190,18 +189,20 @@ export const build: BuildV3 = async ({
 	};
 
 	await Promise.all([
-		traceDenoDir(
+		traceDenoInfo(
 			outputFiles,
+			env,
 			denoDir,
-			join(__dirname, 'runtime.ts'),
 			workPath,
+			join(__dirname, 'runtime.ts'),
 			'.vercel-deno-runtime.ts'
 		),
-		traceDenoDir(
+		traceDenoInfo(
 			outputFiles,
+			env,
 			denoDir,
-			join(workPath, entrypoint),
-			workPath
+			workPath,
+			join(workPath, entrypoint)
 		),
 	]);
 
@@ -246,8 +247,6 @@ export const build: BuildV3 = async ({
 		}
 	}
 
-	//console.log(outputFiles);
-
 	const output = new Lambda({
 		files: outputFiles,
 		handler: entrypoint,
@@ -258,89 +257,117 @@ export const build: BuildV3 = async ({
 	return { output };
 };
 
-async function* getFilesWithExtension(
-	dir: string,
-	ext: string
-): AsyncIterable<string> {
-	const files = await readdir(dir);
-	for (const file of files) {
-		const absolutePath = join(dir, file);
-		if (file.endsWith(ext)) {
-			yield absolutePath;
-		} else {
-			const s = await stat(absolutePath);
-			if (s.isDirectory()) {
-				yield* getFilesWithExtension(absolutePath, ext);
-			}
-		}
-	}
-}
-
-async function traceDenoDir(
+async function traceDenoInfo(
 	files: Files,
+	env: Env,
 	denoDir: string,
-	entrypoint: string,
 	cwd: string,
+	entrypoint: string,
 	renameFile = '',
 	renameDir = '/var/task'
 ) {
-	const buildInfoPath = join(denoDir, 'gen/file', `${entrypoint}.buildinfo`);
-	const buildInfo: BuildInfo = await readJSON(buildInfoPath);
-	const fileNames = buildInfo.program.fileNames;
-	if (!fileNames) {
-		console.log(`No buildinfo files detected for: "${entrypoint}"`);
-		return;
+	const cp = spawn('deno', ['info', '--json', entrypoint], {
+		env,
+		cwd,
+		stdio: ['ignore', 'pipe', 'inherit'],
+	});
+	const [stdout, [code]] = await Promise.all([
+		streamToBuffer(cp.stdout),
+		once(cp, 'exit'),
+	]);
+	if (code !== 0) {
+		throw new Error(`Build script failed with exit code ${code}`);
 	}
+	const info = JSON.parse(stdout.toString('utf8'));
+	const root = info.roots[0];
+
 	const outputDenoDir = relative(cwd, denoDir);
 	const renamedDenoDir = join(outputDenoDir, 'gen/file', renameDir);
 
-	// TODO: is there a more optimal way to calculate the
-	// hash rather than a reverse lookup?
-	const depsUrlToHash = new Map<string, string>();
-	const denoDirDeps = join(denoDir, 'deps');
-	const metadataExt = '.metadata.json';
-	for await (const file of getFilesWithExtension(denoDirDeps, metadataExt)) {
-		const metadata = await readJSON(file);
-		depsUrlToHash.set(
-			metadata.url,
-			relative(denoDirDeps, file.slice(0, -metadataExt.length))
-		);
-	}
-	//console.log(depsUrlToHash)
-
-	for (let i = 0; i < fileNames.length; i++) {
-		const fileName = fileNames[i];
-		if (fileName.startsWith('file://')) {
-			const filePath = fileURLToPath(fileName);
-			const outputPath = renameFile || relative(cwd, filePath);
-			const outputURL = pathToFileURL(join(renameDir, outputPath));
-
-			// Update `.buildinfo` with renamed source file URL
-			fileNames[i] = outputURL.href;
+	for (const mod of info.modules) {
+		if (mod.specifier.startsWith('file://')) {
+			const outputPath =
+				(root === mod.specifier && renameFile) ||
+				relative(cwd, mod.local);
 
 			// Add source file to output files
 			files[outputPath] = await FileFsRef.fromFsPath({
-				fsPath: filePath,
+				fsPath: mod.local,
 			});
 
 			// Add gen `.meta` file to output files
-			const metaPath = join(denoDir, 'gen/file', `${filePath}.meta`);
+			const metaPath = join(denoDir, 'gen/file', `${mod.local}.meta`);
 			const metaOutputPath = join(renamedDenoDir, `${outputPath}.meta`);
-			files[metaOutputPath] = await FileFsRef.fromFsPath({
+			await FileFsRef.fromFsPath({
 				fsPath: metaPath,
-			});
+			}).then(
+				(ref) => {
+					files[metaOutputPath] = ref;
+				},
+				(err) => {
+					// Won't exist for "JavaScript" mediaType so "ENOENT" is ok
+					if (err.code !== 'ENOENT') throw err;
+				}
+			);
 
 			// Add gen compiled source file to output files
-			const compiledPath = join(denoDir, 'gen/file', `${filePath}.js`);
+			const compiledPath = join(denoDir, 'gen/file', `${mod.local}.js`);
 			const compiledOutputPath = join(renamedDenoDir, `${outputPath}.js`);
-			files[compiledOutputPath] = await FileFsRef.fromFsPath({
+			await FileFsRef.fromFsPath({
 				fsPath: compiledPath,
-			});
-		} else if (fileName.startsWith('https://')) {
-			const depPath = depsUrlToHash.get(fileName);
-			if (!depPath) {
-				throw new Error(`Could not find dependency: "${fileName}"`);
-			}
+			}).then(
+				(ref) => {
+					files[compiledOutputPath] = ref;
+				},
+				(err) => {
+					// Won't exist for "JavaScript" mediaType so "ENOENT" is ok
+					if (err.code !== 'ENOENT') throw err;
+				}
+			);
+
+			// Patch `.buildinfo` file with updated Deno dir file references
+			//await patchBuildInfo();
+			const buildInfoPath = join(
+				denoDir,
+				'gen/file',
+				`${mod.local}.buildinfo`
+			);
+			const buildInfoOutputPath = join(
+				renamedDenoDir,
+				`${outputPath}.buildinfo`
+			);
+			await readJSON(buildInfoPath).then(
+				(buildInfo: BuildInfo) => {
+					const fileNames = buildInfo.program.fileNames;
+					if (!fileNames) {
+						console.log(
+							`No buildinfo files detected for: "${buildInfoPath}"`
+						);
+						return;
+					}
+					for (let i = 0; i < fileNames.length; i++) {
+						const fileName = fileNames[i];
+						if (fileName.startsWith('file://')) {
+							const filePath = fileURLToPath(fileName);
+							const outputPath =
+								(root === fileName && renameFile) ||
+								relative(cwd, filePath);
+							const outputURL = pathToFileURL(
+								join(renameDir, outputPath)
+							);
+							fileNames[i] = outputURL.href;
+						}
+					}
+					files[buildInfoOutputPath] = new FileBlob({
+						data: JSON.stringify(buildInfo, null, 2),
+					});
+				},
+				(err) => {
+					if (err.code !== 'ENOENT') throw err;
+				}
+			);
+		} else if (mod.specifier.startsWith('https://')) {
+			const depPath = relative(join(denoDir, 'deps'), mod.local);
 
 			// Add deps source file to output files
 			const depOutputPath = join(outputDenoDir, 'deps', depPath);
@@ -349,7 +376,7 @@ async function traceDenoDir(
 			});
 
 			// Add deps `.metadata.json` file to output files
-			const metadataPath = `${depPath}${metadataExt}`;
+			const metadataPath = `${depPath}.metadata.json`;
 			const metadataOutputPath = join(
 				outputDenoDir,
 				'deps',
@@ -381,20 +408,8 @@ async function traceDenoDir(
 				// "ENOENT" is ok because `.d.ts` files will not have compiled files
 				if (err.code !== 'ENOENT') throw err;
 			}
-		} else if (fileName.startsWith('asset://')) {
-			// Ignore
 		} else {
-			throw new Error(`Unsupported file protocol: ${fileName}`);
+			throw new Error(`Unsupported file protocol: ${mod.specifier}`);
 		}
 	}
-
-	// Output updated `.buildinfo` file for the entrypoint
-	const buildInfoOutputName = renameFile || relative(cwd, entrypoint);
-	const buildInfoOutputPath = join(
-		renamedDenoDir,
-		`${buildInfoOutputName}.buildinfo`
-	);
-	files[buildInfoOutputPath] = new FileBlob({
-		data: JSON.stringify(buildInfo, null, 2),
-	});
 }
