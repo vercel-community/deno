@@ -6,8 +6,7 @@ export async function getStaticProps() {
 	const apiDir = join(process.cwd(), 'api');
 	const apiFiles = await fs.promises.readdir(apiDir);
 	const examples = apiFiles
-		.filter((f) => f.endsWith('.ts') || f.endsWith('.js'))
-		.map((f) => basename(f, extname(f)));
+		.filter((f) => f.endsWith('.ts') || f.endsWith('.js'));
 	return { props: { examples } };
 }
 
@@ -20,12 +19,12 @@ export default function Index ({ examples }) {
 				<ul>
 					{examples.map((example) => (
 						<li key={example}>
-							<Link href={`/api/${example}`}>
+							<Link href={`/api/${basename(example, extname(example))}`}>
 								<a>{example}</a>
 							</Link>
 							{' '}
 							(
-								<Link href={`https://github.com/vercel-community/deno/blob/master/api/${example}.ts`}>
+								<Link href={`https://github.com/vercel-community/deno/blob/master/api/${example}`}>
 									<a target="_blank" rel="noopener noreferrer">Source</a>
 								</Link>
 							)
