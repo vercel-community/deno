@@ -1,4 +1,5 @@
 #!/usr/bin/env deno run --location https://example.com/page
+import ms from 'https://esm.sh/ms';
 import { readerFromStreamReader } from 'https://deno.land/std@0.107.0/io/streams.ts';
 
 interface HeadersObject {
@@ -60,6 +61,7 @@ export default async ({ request }: Deno.RequestEvent) => {
 		uptime,
 		nowHuman: now.toUTCString(),
 		bootupHuman: startTime.toUTCString(),
+		uptimeHuman: ms(uptime),
 		request: {
 			method: request.method,
 			url: urlToObject(url),
