@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { basename, extname, join } from 'path';
 
 export async function getStaticProps() {
+	console.log(process.env);
 	const apiDir = join(process.cwd(), 'api');
 	const apiFiles = await fs.promises.readdir(apiDir);
 	const examples = apiFiles
