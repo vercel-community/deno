@@ -23,6 +23,12 @@ export default ({ examples }) => {
 							<Link href={`/api/${example}`}>
 								<a>{example}</a>
 							</Link>
+							{' '}
+							(
+								<Link href={`https://github.com/vercel-community/deno/blob/master/api/${example}.ts`}>
+									<a target="_blank" rel="noopener noreferrer">Source</a>
+								</Link>
+							)
 						</li>
 					))}
 				</ul>
