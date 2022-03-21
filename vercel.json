@@ -2,7 +2,7 @@
   "public": true,
   "functions": {
     "api/**/*.[jt]s": {
-      "runtime": "vercel-dev-runtime@0.0.3"
+      "runtime": "vercel-dev-runtime@0.0.4"
     }
   }
 }

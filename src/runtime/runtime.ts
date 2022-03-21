@@ -65,7 +65,8 @@ class Deferred<T> {
 
 class VercelRequest
 	extends stdHttpServer.ServerRequest
-	implements RequestEvent {
+	implements RequestEvent
+{
 	readonly request: Request;
 	#response: Deferred<Response>;
 	#output: Deno.Buffer;
@@ -300,5 +301,5 @@ if (_HANDLER) {
 	});
 } else {
 	// Build - import the entrypoint so that it gets cached
-	await import(`./${ENTRYPOINT}`);
+	await import(ENTRYPOINT);
 }

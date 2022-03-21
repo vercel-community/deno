@@ -11,7 +11,7 @@ export async function getStaticProps() {
 	return { props: { examples } };
 }
 
-export default ({ examples }) => {
+export default function Index ({ examples }) {
 	return (
 		<div>
 			<p>Hello from Deno, powered by Vercel!</p>
