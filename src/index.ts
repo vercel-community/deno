@@ -207,7 +207,9 @@ export const build: BuildV3 = async ({
 		),
 	]);
 
-	const sourceFiles = new Set<string>();
+	// Add additional files that were referenced from
+	// Deno CLI flags in the shebang
+	const additionalFiles = new Set<string>();
 	for (const flag of [
 		'--cert',
 		'--config',
@@ -216,17 +218,17 @@ export const build: BuildV3 = async ({
 	] as const) {
 		const val = args[flag];
 		if (typeof val === 'string' && !isURL(val)) {
-			sourceFiles.add(val);
+			additionalFiles.add(val);
 		}
 	}
-
-	for (const filename of Array.from(sourceFiles).sort()) {
-		console.log(` - ${filename}`);
+	for (const filename of Array.from(additionalFiles).sort()) {
 		outputFiles[filename] = await FileFsRef.fromFsPath({
 			fsPath: join(workPath, filename),
 		});
 	}
 
+	// Add additional files that were referenced from
+	// `--include-files` CLI flag or the `vercel.json` config
 	if (config.includeFiles) {
 		if (typeof config.includeFiles === 'string') {
 			includeFiles.push(config.includeFiles);
@@ -234,14 +236,11 @@ export const build: BuildV3 = async ({
 			includeFiles.push(...config.includeFiles);
 		}
 	}
-
 	if (includeFiles.length > 0) {
-		console.log('Including additional files:');
 		for (const pattern of includeFiles) {
 			const matches = await glob(pattern, workPath);
 			for (const name of Object.keys(matches)) {
 				if (!outputFiles[name]) {
-					console.log(` - ${name}`);
 					outputFiles[name] = matches[name];
 				}
 			}
