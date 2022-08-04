@@ -252,6 +252,7 @@ export const build: BuildV3 = async ({
 		handler: entrypoint,
 		runtime: 'provided.al2',
 		environment: args.env,
+		supportsWrapper: true,
 	});
 
 	return { output };
