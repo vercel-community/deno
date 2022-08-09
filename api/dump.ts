@@ -1,5 +1,5 @@
 #!/usr/bin/env deno run --location https://example.com/page
-import ms from 'https://esm.sh/ms';
+import ms from "https://esm.sh/ms@2.1.3";
 import { readerFromStreamReader } from 'https://deno.land/std@0.107.0/io/streams.ts';
 
 interface HeadersObject {
