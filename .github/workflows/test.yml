@@ -14,27 +14,27 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 7.18.2
 
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
 
     - name: Print Node.js Version
       run: node --version
 
     - name: Install Dependencies
-      run: npm install
-      env:
-        CI: true
+      run: pnpm install --frozen-lockfile
 
     - name: Run "build" step
-      run: npm run build --if-present
-      env:
-        CI: true
+      run: pnpm build
 
     - name: Run tests
-      run: npm test
-      env:
-        CI: true
+      run: pnpm test
