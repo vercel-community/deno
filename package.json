@@ -1,6 +1,6 @@
 {
   "name": "vercel-deno",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Vercel Runtime for Deno serverless functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
