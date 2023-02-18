@@ -1,4 +1,4 @@
-import { Response, serve } from 'https://deno.land/std@0.106.0/http/server.ts';
+import { writeAllSync } from 'https://deno.land/std@0.130.0/streams/conversion.ts';
 
 function isNetAddr(v: any): v is Deno.NetAddr {
 	return v && typeof v.port === 'number';
@@ -15,16 +15,16 @@ if (typeof handler !== 'function') {
 }
 
 // Spawn HTTP server on ephemeral port
-const s = serve({ hostname: '127.0.0.1', port: 0 });
+const conn = await Deno.listen({ port: 0 });
 
-if (isNetAddr(s.listener.addr)) {
-	const { port } = s.listener.addr;
+if (isNetAddr(conn.addr)) {
+	const { port } = conn.addr;
 	const portBytes = new TextEncoder().encode(String(port));
 
 	try {
 		// Write the port number to FD 3
 		const portFd = Deno.openSync('/dev/fd/3', { read: false, write: true });
-		Deno.writeAllSync(portFd, portBytes);
+		writeAllSync(portFd, portBytes);
 		Deno.close(portFd.rid);
 	} catch (err) {
 		// This fallback is necessary for Windows
@@ -38,11 +38,12 @@ if (isNetAddr(s.listener.addr)) {
 	}
 }
 
+const s = Deno.serveHttp(await conn.accept());
 // Serve HTTP requests to handler function
 for await (const req of s) {
 	Promise.resolve(handler(req)).then((res: Response | void) => {
 		if (res) {
-			return req.respond(res);
+			return req.respondWith(res);
 		}
 	});
 }
