@@ -28,10 +28,11 @@ function fromVercelRequest(payload: VercelRequestPayload): Request {
 		'x-forwarded-host'
 	)}`;
 	const url = new URL(payload.path, base);
+	const body = payload.body ? base64.decode(payload.body) : undefined;
 	return new Request(url.href, {
-		headers,
 		method: payload.method,
-		body: base64.decode(payload.body || ''),
+		headers,
+		body
 	});
 }
 
