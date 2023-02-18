@@ -29,7 +29,6 @@ function sortObject<T extends Record<string, unknown>>(obj: T): T {
 }
 
 export default async (request: Request) => {
-	console.log(request);
 	const now = new Date();
 	const uptime = now.getTime() - startTime.getTime();
 	const url = new URL(request.url);
