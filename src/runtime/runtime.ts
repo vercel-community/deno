@@ -40,8 +40,7 @@ async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
 	let body = '';
 	const bodyBuffer = await res.arrayBuffer();
 	if (bodyBuffer.byteLength > 0) {
-		const bytes = new Uint8Array(bodyBuffer);
-		body = base64.encode(bytes);
+		body = base64.encode(bodyBuffer);
 	}
 
 	return {
