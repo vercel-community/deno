@@ -1,20 +1,7 @@
 #!/usr/bin/env deno run --location https://example.com/page
 import ms from 'https://esm.sh/ms@2.1.3';
-import { readerFromStreamReader } from 'https://deno.land/std@0.107.0/io/streams.ts';
-
-interface HeadersObject {
-	[name: string]: any;
-}
 
 const startTime = new Date();
-
-function headersToObject(headers: Headers): HeadersObject {
-	const obj: HeadersObject = {};
-	for (const [name, value] of headers.entries()) {
-		obj[name] = value;
-	}
-	return obj;
-}
 
 function urlToObject(url: URL) {
 	return {
@@ -32,7 +19,7 @@ function urlToObject(url: URL) {
 	};
 }
 
-function sortObject<T extends object>(obj: T): T {
+function sortObject<T extends Record<string, unknown>>(obj: T): T {
 	const sorted: T = Object.create(Object.getPrototypeOf(obj));
 	const keys = Object.keys(obj).sort() as (keyof T)[];
 	for (const k of keys) {
@@ -41,7 +28,8 @@ function sortObject<T extends object>(obj: T): T {
 	return sorted;
 }
 
-export default async ({ request }: Deno.RequestEvent) => {
+export default async (request: Request) => {
+	console.log(request);
 	const now = new Date();
 	const uptime = now.getTime() - startTime.getTime();
 	const url = new URL(request.url);
@@ -55,6 +43,8 @@ export default async ({ request }: Deno.RequestEvent) => {
 		}
 	}
 
+	const reqBody = await request.arrayBuffer();
+
 	const body = {
 		now: now.getTime(),
 		bootup: startTime.getTime(),
@@ -65,14 +55,11 @@ export default async ({ request }: Deno.RequestEvent) => {
 		request: {
 			method: request.method,
 			url: urlToObject(url),
-			headers: sortObject(headersToObject(request.headers)),
-			body: request.body
-				? new TextDecoder().decode(
-						await Deno.readAll(
-							readerFromStreamReader(request.body.getReader())
-						)
-				  )
-				: null,
+			headers: sortObject(Object.fromEntries(request.headers)),
+			body:
+				reqBody.byteLength > 0
+					? new TextDecoder().decode(reqBody)
+					: null,
 		},
 		response: {
 			status,
