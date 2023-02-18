@@ -1,5 +1,6 @@
 #!/usr/bin/env deno run --location https://example.com/page
 import ms from 'https://esm.sh/ms@2.1.3';
+import type { Handler } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const startTime = new Date();
 
@@ -28,7 +29,7 @@ function sortObject<T extends Record<string, unknown>>(obj: T): T {
 	return sorted;
 }
 
-export default async (request: Request) => {
+const handler: Handler = async (request) => {
 	const now = new Date();
 	const uptime = now.getTime() - startTime.getTime();
 	const url = new URL(request.url);
@@ -81,3 +82,5 @@ export default async (request: Request) => {
 		},
 	});
 };
+
+export default handler;

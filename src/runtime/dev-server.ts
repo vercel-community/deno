@@ -1,4 +1,5 @@
 import { writeAllSync } from 'https://deno.land/std@0.130.0/streams/conversion.ts';
+import type { Handler, ConnInfo } from "https://deno.land/std@0.177.0/http/server.ts";
 
 // deno-lint-ignore no-explicit-any
 function isNetAddr(v: any): v is Deno.NetAddr {
@@ -10,16 +11,16 @@ const entrypoint = Deno.env.get('VERCEL_DEV_ENTRYPOINT');
 Deno.env.delete('VERCEL_DEV_ENTRYPOINT');
 
 const mod = await import(`file://${entrypoint}`);
-const handler = mod.default;
+const handler: Handler = mod.default;
 if (typeof handler !== 'function') {
 	throw new Error('Failed to load handler function');
 }
 
 // Spawn HTTP server on ephemeral port
-const conn = Deno.listen({ port: 0 });
+const listener = Deno.listen({ port: 0 });
 
-if (isNetAddr(conn.addr)) {
-	const { port } = conn.addr;
+if (isNetAddr(listener.addr)) {
+	const { port } = listener.addr;
 	const portBytes = new TextEncoder().encode(String(port));
 
 	try {
@@ -40,9 +41,14 @@ if (isNetAddr(conn.addr)) {
 }
 
 // Serve HTTP requests to handler function
-const s = Deno.serveHttp(await conn.accept());
+const conn = await listener.accept();
+const s = Deno.serveHttp(conn);
 for await (const req of s) {
-	Promise.resolve(handler(req.request)).then((res: Response) =>
+	const connInfo: ConnInfo = {
+		localAddr: conn.localAddr,
+		remoteAddr: conn.remoteAddr,
+	};
+	Promise.resolve(handler(req.request, connInfo)).then((res: Response) =>
 		req.respondWith(res)
 	);
 }
