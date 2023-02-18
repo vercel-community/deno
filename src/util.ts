@@ -4,7 +4,7 @@ export function isURL(v: string) {
 	try {
 		new URL(v);
 		return true;
-	} catch (_) {
+	} catch {
 		return false;
 	}
 }

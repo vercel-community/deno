@@ -19,7 +19,9 @@ every time an HTTP request is received.
 Create a file called `api/hello.ts` with the following contents:
 
 ```typescript
-export default () => new Response(`Hello, from Deno v${Deno.version.deno}!`);
+export default (req: Request) => {
+	return new Response(`Hello, from Deno v${Deno.version.deno}!`);
+};
 ```
 
 Next, define the **vercel-deno** runtime within the "functions" object in your

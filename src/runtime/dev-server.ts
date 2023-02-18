@@ -1,5 +1,8 @@
 import { writeAllSync } from 'https://deno.land/std@0.130.0/streams/conversion.ts';
-import type { Handler, ConnInfo } from "https://deno.land/std@0.177.0/http/server.ts";
+import type {
+	Handler,
+	ConnInfo,
+} from 'https://deno.land/std@0.177.0/http/server.ts';
 
 // deno-lint-ignore no-explicit-any
 function isNetAddr(v: any): v is Deno.NetAddr {

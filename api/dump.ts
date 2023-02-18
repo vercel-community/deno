@@ -1,6 +1,6 @@
 #!/usr/bin/env deno run --location https://example.com/page
 import ms from 'https://esm.sh/ms@2.1.3';
-import type { Handler } from "https://deno.land/std@0.177.0/http/server.ts";
+import type { Handler } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 const startTime = new Date();
 
