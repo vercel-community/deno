@@ -1,5 +1,8 @@
 import * as base64 from 'https://deno.land/std@0.177.0/encoding/base64.ts';
-import type { Handler, ConnInfo } from "https://deno.land/std@0.177.0/http/server.ts";
+import type {
+	Handler,
+	ConnInfo,
+} from 'https://deno.land/std@0.177.0/http/server.ts';
 
 export interface VercelRequestPayload {
 	method: string;
@@ -31,7 +34,7 @@ function fromVercelRequest(payload: VercelRequestPayload): Request {
 	return new Request(url.href, {
 		method: payload.method,
 		headers,
-		body
+		body,
 	});
 }
 
@@ -70,8 +73,12 @@ async function processEvents(): Promise<void> {
 
 			const connInfo: ConnInfo = {
 				// TODO: how to properly calculate these?
-				localAddr: { hostname: "127.0.0.1", port: 0, transport: "tcp" },
-				remoteAddr: { hostname: "127.0.0.1", port: 0, transport: "tcp" },
+				localAddr: { hostname: '127.0.0.1', port: 0, transport: 'tcp' },
+				remoteAddr: {
+					hostname: '127.0.0.1',
+					port: 0,
+					transport: 'tcp',
+				},
 			};
 
 			// Run user code
