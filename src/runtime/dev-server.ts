@@ -48,6 +48,8 @@ const conn = await listener.accept();
 const s = Deno.serveHttp(conn);
 for await (const req of s) {
 	const connInfo: ConnInfo = {
+		// @ts-ignore - `rid` is not on the `ConnInfo` interface, but it's required by Oak
+		rid: conn.rid,
 		localAddr: conn.localAddr,
 		remoteAddr: conn.remoteAddr,
 	};
