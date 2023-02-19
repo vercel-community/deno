@@ -1,13 +1,12 @@
 import fs from 'fs';
+import { join } from 'path';
 import { tmpdir } from 'os';
 import { Readable } from 'stream';
 import { spawn } from 'child_process';
 import once from '@tootallnate/once';
-import { dirname, join, relative, resolve } from 'path';
 import { Env, shouldServe, StartDevServer } from '@vercel/build-utils';
 import { AbortController, AbortSignal } from 'abort-controller';
 import * as shebang from './shebang';
-import { isURL } from './util';
 
 export { shouldServe };
 
@@ -38,7 +37,6 @@ export const startDevServer: StartDevServer = async ({
 	);
 
 	const absEntrypoint = join(workPath, entrypoint);
-	const absEntrypointDir = dirname(absEntrypoint);
 
 	const env: Env = {
 		...process.env,
@@ -48,21 +46,6 @@ export const startDevServer: StartDevServer = async ({
 	};
 
 	const args = shebang.parse(await readFile(absEntrypoint, 'utf8'));
-
-	// Flags that accept file paths are relative to the entrypoint in
-	// the source file, but `deno run` is executed at the root directory
-	// of the project, so the arguments need to be relativized to the root
-	for (const flag of [
-		'--cert',
-		'--config',
-		'--import-map',
-		'--lock',
-	] as const) {
-		const val = args[flag];
-		if (typeof val === 'string' && !isURL(val)) {
-			args[flag] = relative(workPath, resolve(absEntrypointDir, val));
-		}
-	}
 
 	const argv = [
 		'run',

@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { dirname, join, relative, resolve } from 'path';
+import { join, relative } from 'path';
 import {
 	chmodSync,
 	readFile,
@@ -69,7 +69,6 @@ export class DenoLambda extends Lambda {
 		cacheDir,
 	}: DenoLambdaBuildOptions): Promise<DenoLambda> {
 		const absEntrypoint = join(cwd, entrypoint);
-		const absEntrypointDir = dirname(absEntrypoint);
 		const args = shebang.parse(await readFile(absEntrypoint, 'utf8'));
 
 		let denoVersion = args['--version'] || defaultDenoVersion;
@@ -107,26 +106,9 @@ export class DenoLambda extends Lambda {
 		const origPath = env.PATH;
 		env.PATH = [buildTimeDeno?.dir || runtimeDeno.dir, origPath].join(':');
 
-		// Flags that accept file paths are relative to the entrypoint in
-		// the source file, but `deno run` is executed at the root directory
-		// of the project, so the arguments need to be relativized to the root
-		for (const flag of [
-			'--cert',
-			'--config',
-			'--import-map',
-			'--lock',
-		] as const) {
-			const val = args[flag];
-			if (typeof val === 'string' && !isURL(val)) {
-				args[flag] = relative(cwd, resolve(absEntrypointDir, val));
-			}
-		}
-
 		// This flag is specific to `vercel-deno`, so it does not
 		// get included in the args that are passed to `deno run`
-		const includeFiles = (args['--include-files'] || []).map((f) => {
-			return relative(cwd, join(absEntrypointDir, f));
-		});
+		const includeFiles = args['--include-files'] || [];
 		delete args['--include-files'];
 
 		const argv = ['--allow-all', ...args];

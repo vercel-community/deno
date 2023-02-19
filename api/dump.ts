@@ -1,4 +1,4 @@
-#!/usr/bin/env deno run --location https://example.com/page
+#!/usr/bin/env deno run --location https://example.com/page --include-files package.json
 import ms from 'https://esm.sh/ms@2.1.3';
 import type { Handler } from 'https://deno.land/std@0.177.0/http/server.ts';
 
@@ -43,7 +43,10 @@ const handler: Handler = async (request) => {
 		}
 	}
 
-	const reqBody = await request.arrayBuffer();
+	const [reqBody, packageJson] = await Promise.all([
+		request.arrayBuffer(),
+		Deno.readTextFile('./package.json'),
+	]);
 
 	const body = {
 		now: now.getTime(),
@@ -73,6 +76,7 @@ const handler: Handler = async (request) => {
 			env: sortObject(env),
 		},
 		location: window.location,
+		packageJson: JSON.parse(packageJson),
 	};
 	console.log(body);
 	return new Response(JSON.stringify(body, null, 2), {
