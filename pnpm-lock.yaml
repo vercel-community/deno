@@ -37,7 +37,6 @@ specifiers:
   ts-jest: ^27.0.5
   typescript: ^4.1.5
   yauzl-promise: ^2.1.3
-  yn: ^4.0.0
 
 dependencies:
   '@tootallnate/once': 2.0.0
@@ -49,7 +48,6 @@ dependencies:
   ramda: 0.27.2
   shell-args: 1.0.0
   yauzl-promise: 2.1.3
-  yn: 4.0.0
 
 devDependencies:
   '@types/fs-extra': 9.0.13
@@ -4976,9 +4974,4 @@ packages:
     dependencies:
       buffer-crc32: 0.2.13
       fd-slicer: 1.1.0
-    dev: false
-
-  /yn/4.0.0:
-    resolution: {integrity: sha512-huWiiCS4TxKc4SfgmTwW1K7JmXPPAmuXWYy4j9qjQo4+27Kni8mGhAAi1cloRWmBe2EqcLgt3IGqQoRL/MtPgg==}
-    engines: {node: '>=10'}
     dev: false
