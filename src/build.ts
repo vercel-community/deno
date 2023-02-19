@@ -1,8 +1,3 @@
-/**
- * The default version of Deno that will be downloaded at build-time.
- */
-const DEFAULT_DENO_VERSION = 'v1.30.0';
-
 import { join } from 'path';
 import { DenoLambda } from './deno-lambda';
 import { BuildV3, download } from '@vercel/build-utils';
@@ -22,7 +17,6 @@ export const build: BuildV3 = async ({
 		cwd: workPath,
 		includeFiles:
 			typeof includeFiles === 'string' ? [includeFiles] : includeFiles,
-		defaultDenoVersion: DEFAULT_DENO_VERSION,
 		cacheDir: devCacheDir,
 	});
 	return { output };

@@ -1,3 +1,8 @@
+/**
+ * The default version of Deno that will be downloaded at build-time.
+ */
+const DEFAULT_DENO_VERSION = 'v1.30.3';
+
 import { spawn } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { join, relative } from 'path';
@@ -47,9 +52,9 @@ export interface DenoLambdaOptions
 export interface DenoLambdaBuildOptions {
 	entrypoint: string;
 	cwd: string;
-	defaultDenoVersion: string;
-	includeFiles?: string[];
 	cacheDir: string;
+	defaultDenoVersion?: string;
+	includeFiles?: string[];
 }
 
 export class DenoLambda extends Lambda {
@@ -64,7 +69,7 @@ export class DenoLambda extends Lambda {
 	static async build({
 		entrypoint,
 		cwd,
-		defaultDenoVersion,
+		defaultDenoVersion = DEFAULT_DENO_VERSION,
 		includeFiles: _includeFiles = [],
 		cacheDir,
 	}: DenoLambdaBuildOptions): Promise<DenoLambda> {
