@@ -18,7 +18,8 @@ The more recently supported `ServerRequest` syntax requires very little changes.
 ```diff
 -import { ServerRequest } from 'https://deno.land/std@0.106.0/http/server.ts';
 -
-export default function (request: ServerRequest) {
+-export default function (request: ServerRequest) {
++export default function (request: Request) {
   console.log(request.url);
 - request.respond({ body: '...' });
 + return new Response('...');
