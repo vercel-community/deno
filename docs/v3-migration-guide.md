@@ -20,7 +20,9 @@ The more recently supported `ServerRequest` syntax requires very little changes.
 -
 -export default function (request: ServerRequest) {
 +export default function (request: Request) {
+
   console.log(request.url);
+
 - request.respond({ body: '...' });
 + return new Response('...');
 }
