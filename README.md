@@ -4,6 +4,9 @@ The Deno Runtime compiles a TypeScript or JavaScript function into a serverless
 function powered by [Deno](https://deno.land), running on
 [Vercel](https://vercel.com).
 
+> ## Version 3 includes breaking changes!
+> Please read the [migration guide](./docs/v3-migration-guide.md).
+
 ## Usage
 
 Your serverless function file is expected to `export default` the HTTP handler
