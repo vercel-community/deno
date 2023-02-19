@@ -4,6 +4,9 @@ The Deno Runtime compiles a TypeScript or JavaScript function into a serverless
 function powered by [Deno](https://deno.land), running on
 [Vercel](https://vercel.com).
 
+> ## Version 3 includes breaking changes!
+> Please read the [migration guide](./docs/v3-migration-guide.md).
+
 ## Usage
 
 Your serverless function file is expected to `export default` the HTTP handler
@@ -19,7 +22,9 @@ every time an HTTP request is received.
 Create a file called `api/hello.ts` with the following contents:
 
 ```typescript
-export default () => new Response(`Hello, from Deno v${Deno.version.deno}!`);
+export default (req: Request) => {
+	return new Response(`Hello, from Deno v${Deno.version.deno}!`);
+};
 ```
 
 Next, define the **vercel-deno** runtime within the "functions" object in your

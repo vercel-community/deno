@@ -73,6 +73,8 @@ async function processEvents(): Promise<void> {
 
 			const connInfo: ConnInfo = {
 				// TODO: how to properly calculate these?
+				// @ts-ignore - `rid` is not on the `ConnInfo` interface, but it's required by Oak
+				rid: 0,
 				localAddr: { hostname: '127.0.0.1', port: 0, transport: 'tcp' },
 				remoteAddr: {
 					hostname: '127.0.0.1',
