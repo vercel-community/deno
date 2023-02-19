@@ -7,7 +7,6 @@ import { dirname, join, relative, resolve } from 'path';
 import { Env, shouldServe, StartDevServer } from '@vercel/build-utils';
 import { AbortController, AbortSignal } from 'abort-controller';
 import * as shebang from './shebang';
-import { configBool, configString } from './config';
 import { isURL } from './util';
 
 export { shouldServe };
