@@ -72,9 +72,9 @@ If you were using the environment variables `DENO_UNSTABLE` or `DENO_TSCONFIG` (
 ```diff
 +#!/usr/bin/env deno run --unstable
 
-export default (req: Request) => {
-	return new Response('...');
-};
+ export default (req: Request) => {
+   return new Response('...');
+ };
 ```
 
 ## Migrate from `config` in `vercel.json`
@@ -101,7 +101,7 @@ If you were using the `config` object in `vercel.json` to specifiy `unstable` or
 ```diff
 +#!/usr/bin/env deno run --unstable
 
-export default (req: Request) => {
-	return new Response('...');
-};
+ export default (req: Request) => {
+   return new Response('...');
+ };
 ```
