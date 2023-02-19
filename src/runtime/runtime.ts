@@ -1,40 +1,19 @@
-import * as base64 from 'https://deno.land/std@0.106.0/encoding/base64.ts';
-import * as stdHttpServer from 'https://deno.land/std@0.106.0/http/server.ts';
-import { TextProtoReader } from 'https://deno.land/std@0.106.0/textproto/mod.ts';
-import { readerFromStreamReader } from 'https://deno.land/std@0.106.0/io/streams.ts';
-import {
-	BufReader,
-	BufWriter,
-} from 'https://deno.land/std@0.106.0/io/bufio.ts';
-
-export interface HeadersObj {
-	[name: string]: string;
-}
-
-export interface RequestEvent {
-	readonly request: Request;
-	respondWith(r: Response | Promise<Response>): Promise<void>;
-}
+import * as base64 from 'https://deno.land/std@0.177.0/encoding/base64.ts';
+import type { Handler, ConnInfo } from "https://deno.land/std@0.177.0/http/server.ts";
 
 export interface VercelRequestPayload {
 	method: string;
 	path: string;
-	headers: HeadersObj;
+	headers: Record<string, string>;
 	body: string;
 }
 
 export interface VercelResponsePayload {
 	statusCode: number;
-	headers: HeadersObj;
+	headers: Record<string, string>;
 	encoding: 'base64';
 	body: string;
 }
-
-export type StdHandler = (
-	req: stdHttpServer.ServerRequest
-) => Promise<stdHttpServer.Response | void>;
-export type NativeHandler = (event: RequestEvent) => Promise<Response | void>;
-export type Handler = StdHandler | NativeHandler;
 
 const RUNTIME_PATH = '2018-06-01/runtime';
 
@@ -42,131 +21,33 @@ const { _HANDLER, ENTRYPOINT, AWS_LAMBDA_RUNTIME_API } = Deno.env.toObject();
 
 Deno.env.delete('SHLVL');
 
-function headersToObject(headers: Headers): HeadersObj {
-	const obj: HeadersObj = {};
-	for (const [name, value] of headers.entries()) {
-		obj[name] = value;
-	}
-	return obj;
+function fromVercelRequest(payload: VercelRequestPayload): Request {
+	const headers = new Headers(payload.headers);
+	const base = `${headers.get('x-forwarded-proto')}://${headers.get(
+		'x-forwarded-host'
+	)}`;
+	const url = new URL(payload.path, base);
+	const body = payload.body ? base64.decode(payload.body) : undefined;
+	return new Request(url.href, {
+		method: payload.method,
+		headers,
+		body
+	});
 }
 
-class Deferred<T> {
-	promise: Promise<T>;
-	resolve!: (v: T) => void;
-	reject!: (v: any) => void;
-
-	constructor() {
-		this.promise = new Promise<T>((res, rej) => {
-			this.resolve = res;
-			this.reject = rej;
-		});
-	}
-}
-
-class VercelRequest
-	extends stdHttpServer.ServerRequest
-	implements RequestEvent
-{
-	readonly request: Request;
-	#response: Deferred<Response>;
-	#output: Deno.Buffer;
-
-	constructor(data: VercelRequestPayload) {
-		super();
-
-		this.#response = new Deferred();
-
-		// Request headers
-		const headers = new Headers();
-		for (const [name, value] of Object.entries(data.headers)) {
-			if (typeof value === 'string') {
-				headers.set(name, value);
-			}
-			// TODO: handle multi-headers?
-		}
-
-		const base = `${headers.get('x-forwarded-proto')}://${headers.get(
-			'x-forwarded-host'
-		)}`;
-		const url = new URL(data.path, base);
-
-		// Native HTTP server interface
-		this.request = new Request(url.href, {
-			headers,
-			method: data.method,
-		});
-
-		// Legacy `std` HTTP server interface
-		const input = new Deno.Buffer(base64.decode(data.body || ''));
-		this.#output = new Deno.Buffer(new Uint8Array(6000000)); // 6 MB
-
-		// req.conn
-		this.r = new BufReader(input, input.length);
-		this.method = data.method;
-		this.url = data.path;
-		this.proto = 'HTTP/1.1';
-		this.protoMinor = 1;
-		this.protoMajor = 1;
-		this.headers = headers;
-		this.w = new BufWriter(this.#output);
+async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
+	let body = '';
+	const bodyBuffer = await res.arrayBuffer();
+	if (bodyBuffer.byteLength > 0) {
+		body = base64.encode(bodyBuffer);
 	}
 
-	respondWith = async (r: Response | Promise<Response>): Promise<void> => {
-		const response = await r;
-		this.#response.resolve(response);
+	return {
+		statusCode: res.status,
+		headers: Object.fromEntries(res.headers),
+		encoding: 'base64',
+		body,
 	};
-
-	async waitForStdResponse(): Promise<VercelResponsePayload> {
-		const responseError = await this.done;
-		if (responseError) {
-			throw responseError;
-		}
-
-		const bufr = new BufReader(this.#output, this.#output.length);
-		const tp = new TextProtoReader(bufr);
-		const firstLine = await tp.readLine(); // e.g. "HTTP/1.1 200 OK"
-		if (firstLine === null) throw new Deno.errors.UnexpectedEof();
-
-		const resHeaders = await tp.readMIMEHeader();
-		if (resHeaders === null) throw new Deno.errors.UnexpectedEof();
-
-		const body = await bufr.readFull(new Uint8Array(bufr.buffered()));
-		if (!body) throw new Deno.errors.UnexpectedEof();
-
-		await this.finalize();
-
-		return {
-			statusCode: parseInt(firstLine.split(' ', 2)[1], 10),
-			headers: headersToObject(resHeaders),
-			encoding: 'base64',
-			body: base64.encode(body),
-		};
-	}
-
-	async waitForNativeResponse(): Promise<VercelResponsePayload> {
-		const res = await this.#response.promise;
-
-		const reader = res.body?.getReader();
-		let body = '';
-		if (reader) {
-			const bytes = await Deno.readAll(readerFromStreamReader(reader));
-			body = base64.encode(bytes);
-		}
-
-		return {
-			statusCode: res.status,
-			headers: headersToObject(res.headers),
-			encoding: 'base64',
-			body,
-		};
-	}
-
-	waitForResult(): Promise<VercelResponsePayload> {
-		return Promise.race([
-			this.waitForStdResponse(),
-			this.waitForNativeResponse(),
-		]);
-	}
 }
 
 async function processEvents(): Promise<void> {
@@ -174,7 +55,7 @@ async function processEvents(): Promise<void> {
 
 	while (true) {
 		const { event, awsRequestId } = await nextInvocation();
-		let result;
+		let result: VercelResponsePayload;
 		try {
 			if (!handler) {
 				const mod = await import(`./${_HANDLER}`);
@@ -184,20 +65,18 @@ async function processEvents(): Promise<void> {
 				}
 			}
 
-			const data = JSON.parse(event.body);
-			const req = new VercelRequest(data);
+			const payload = JSON.parse(event.body) as VercelRequestPayload;
+			const req = fromVercelRequest(payload);
+
+			const connInfo: ConnInfo = {
+				// TODO: how to properly calculate these?
+				localAddr: { hostname: "127.0.0.1", port: 0, transport: "tcp" },
+				remoteAddr: { hostname: "127.0.0.1", port: 0, transport: "tcp" },
+			};
 
 			// Run user code
-			const res = await handler(req);
-			if (res) {
-				if (res instanceof Response) {
-					req.respondWith(res);
-				} else {
-					req.respond(res);
-				}
-			}
-
-			result = await req.waitForResult();
+			const res = await handler(req, connInfo);
+			result = await toVercelResponse(res);
 		} catch (e: unknown) {
 			const err = e instanceof Error ? e : new Error(String(e));
 			console.error(err);
@@ -253,7 +132,7 @@ async function invokeResponse(
 	}
 }
 
-async function invokeError(err: Error, awsRequestId: string) {
+function invokeError(err: Error, awsRequestId: string) {
 	return postError(`invocation/${awsRequestId}/error`, err);
 }
 

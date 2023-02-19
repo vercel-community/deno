@@ -1,3 +1,3 @@
-export default (req) => {
-	req.respond({ body: 'Hello from JavaScript in Deno!' });
+export default (_req) => {
+	return new Response('Hello from JavaScript in Deno!');
 };
