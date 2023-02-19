@@ -21,11 +21,11 @@ The more recently supported `ServerRequest` syntax requires very little changes.
 -export default function (request: ServerRequest) {
 +export default function (request: Request) {
 
-  console.log(request.url);
+   console.log(request.url);
 
-- request.respond({ body: '...' });
-+ return new Response('...');
-}
+-  request.respond({ body: '...' });
++  return new Response('...');
+ }
 ```
 
 ## Migrate from `Deno.RequestEvent`
@@ -41,5 +41,59 @@ The other syntax that was previously supported is `Deno.RequestEvent`. In this s
 
 -  event.respondWith(new Response('...'));
 +  return new Response('...');
-}
+ }
+```
+
+# Legacy Deno Configuration Methods Removed
+
+The deprecated ways of configuring Deno flags (i.e. `--unstable`) have been removed. Now the only way to configure flags is via the shebang method, as [documented in the README](../README.md#configuration).
+
+## Migrate from Environment Variables
+
+If you were using the environment variables `DENO_UNSTABLE` or `DENO_TSCONFIG` (either via the Vercel project settings dashboard, or `vercel.json`), those options must now be passed via the shebang of the individual endpoint.
+
+`vercel.json`:
+
+```diff
+ {
+-  "build": {
+-    "env": {
+-      "DENO_UNSTABLE": "1"
+-    }
+-  },
+   "functions": {
+     "api/**/*.[jt]s": { "runtime": "vercel-deno@3.0.0" }
+   }
+ }
+```
+
+`api/endpoint.ts`
+
+```diff
++#!/usr/bin/env deno run --unstable
+```
+
+## Migrate from `config` in `vercel.json`
+
+If you were using the `config` object in `vercel.json` to specifiy `unstable` or `tsconfig`, those options must now be passed via the shebang of the individual endpoint.
+
+`vercel.json`:
+
+```diff
+ {
+   "functions": {
+     "api/**/*.[jt]s": {
+-      "config": {
+-        "unstable": 1
+-      },
+       "runtime": "vercel-deno@3.0.0"
+     }
+   }
+ }
+```
+
+`api/endpoint.ts`
+
+```diff
++#!/usr/bin/env deno run --unstable
 ```
