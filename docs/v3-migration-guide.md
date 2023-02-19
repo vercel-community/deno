@@ -105,3 +105,21 @@ If you were using the `config` object in `vercel.json` to specifiy `unstable` or
    return new Response('...');
  };
 ```
+
+# Configuration File Paths Relative to `cwd`
+
+Previously, any file paths referenced by configuration options in an endpoint's shebang were relative to the entrypoint file. This was confusing because it caused a dichotomy between the directory where `deno run` is invoked vs. the value of the flag in the shebang.
+
+Now those file paths are relative to the `cwd` that `deno run` is invoked with. That is, the file paths are relative to the root directory of the Project.
+
+```diff
+-#!/usr/bin/env deno run --include-files ../data.json
++#!/usr/bin/env deno run --include-files data.json
+
+ export default (req: Request) => {
+   const data = Deno.readTextFile('./data.json');
+   return new Response(data, {
+     headers: { 'content-type': 'application/json' }
+   });
+ };
+```
