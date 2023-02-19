@@ -31,26 +31,8 @@ function isReadable(v: any): v is Readable {
 export const startDevServer: StartDevServer = async ({
 	entrypoint,
 	workPath,
-	config,
 	meta = {},
 }) => {
-	// @deprecated
-	const unstable =
-		configBool(
-			config,
-			'denoUnstable',
-			meta.buildEnv || {},
-			'DENO_UNSTABLE'
-		) || false;
-
-	// @deprecated
-	const denoTsConfig = configString(
-		config,
-		'tsconfig',
-		meta.buildEnv || {},
-		'DENO_TSCONFIG'
-	);
-
 	const portFile = join(
 		TMP,
 		`vercel-deno-port-${Math.random().toString(32).substring(2)}`
@@ -68,12 +50,6 @@ export const startDevServer: StartDevServer = async ({
 
 	const args = shebang.parse(await readFile(absEntrypoint, 'utf8'));
 
-	// @deprecated
-	if (unstable) {
-		console.log('DENO_UNSTABLE env var is deprecated');
-		args['--unstable'] = true;
-	}
-
 	// Flags that accept file paths are relative to the entrypoint in
 	// the source file, but `deno run` is executed at the root directory
 	// of the project, so the arguments need to be relativized to the root
@@ -87,12 +63,6 @@ export const startDevServer: StartDevServer = async ({
 		if (typeof val === 'string' && !isURL(val)) {
 			args[flag] = relative(workPath, resolve(absEntrypointDir, val));
 		}
-	}
-
-	// @deprecated
-	if (denoTsConfig && !args['--config']) {
-		console.log('DENO_TSCONFIG env var is deprecated');
-		args['--config'] = denoTsConfig;
 	}
 
 	const argv = [
