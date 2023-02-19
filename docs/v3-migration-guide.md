@@ -20,8 +20,8 @@ The more recently supported `ServerRequest` syntax requires very little changes.
 -
 export default function (request: ServerRequest) {
   console.log(request.url);
--  request.respond({ body: '...' });
-+  return new Response('...');
+- request.respond({ body: '...' });
++ return new Response('...');
 }
 ```
 
@@ -32,8 +32,10 @@ The other syntax that was previously supported is `Deno.RequestEvent`. In this s
 ```diff
 -export default function (event: Deno.RequestEvent) {
 +export default function (request: Request) {
+
 -  console.log(event.request.url);
 +  console.log(request.url);
+
 -  event.respondWith(new Response('...'));
 +  return new Response('...');
 }
