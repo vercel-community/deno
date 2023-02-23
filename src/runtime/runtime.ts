@@ -41,7 +41,6 @@ function fromVercelRequest(payload: VercelRequestPayload): Request {
 }
 
 function headersToVercelHeaders(headers: Headers): VercelResponseHeaders {
-	console.log(headers);
 	const h: VercelResponseHeaders = {};
 	for (const [name, value] of headers) {
 		const cur = h[name];
@@ -53,7 +52,6 @@ function headersToVercelHeaders(headers: Headers): VercelResponseHeaders {
 			h[name] = value;
 		}
 	}
-	console.log(h);
 	return h;
 }
 
