@@ -79,12 +79,7 @@ const handler: Handler = async (request) => {
 		packageJson: JSON.parse(packageJson),
 	};
 	console.log(body);
-	return new Response(JSON.stringify(body, null, 2), {
-		status,
-		headers: {
-			'Content-Type': 'application/json; charset=utf8',
-		},
-	});
+	return Response.json(body, { status });
 };
 
 export default handler;
