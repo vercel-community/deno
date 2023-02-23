@@ -4,16 +4,18 @@ import type {
 	ConnInfo,
 } from 'https://deno.land/std@0.177.0/http/server.ts';
 
-export interface VercelRequestPayload {
+interface VercelRequestPayload {
 	method: string;
 	path: string;
 	headers: Record<string, string>;
 	body: string;
 }
 
-export interface VercelResponsePayload {
+type VercelResponseHeaders = Record<string, string | string[]>;
+
+interface VercelResponsePayload {
 	statusCode: number;
-	headers: Record<string, string>;
+	headers: VercelResponseHeaders;
 	encoding: 'base64';
 	body: string;
 }
@@ -38,6 +40,23 @@ function fromVercelRequest(payload: VercelRequestPayload): Request {
 	});
 }
 
+function headersToVercelHeaders(headers: Headers): VercelResponseHeaders {
+	console.log(headers);
+	const h: VercelResponseHeaders = {};
+	for (const [name, value] of headers) {
+		const cur = h[name];
+		if (typeof cur === 'string') {
+			h[name] = [cur, value];
+		} else if (Array.isArray(cur)) {
+			cur.push(value);
+		} else {
+			h[name] = value;
+		}
+	}
+	console.log(h);
+	return h;
+}
+
 async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
 	let body = '';
 	const bodyBuffer = await res.arrayBuffer();
@@ -47,7 +66,7 @@ async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
 
 	return {
 		statusCode: res.status,
-		headers: Object.fromEntries(res.headers),
+		headers: headersToVercelHeaders(res.headers),
 		encoding: 'base64',
 		body,
 	};
