@@ -164,7 +164,14 @@ export class DenoLambda extends Lambda {
 				cwd,
 				join(cwd, entrypoint)
 			),
+			glob("node_modules/.deno/**", {
+				cwd,
+				includeDirectories: true,
+			}).then(files => {
+				Object.assign(outputFiles, files);
+			})
 		]);
+
 
 		// Add additional files that were referenced from
 		// Deno CLI flags in the shebang
