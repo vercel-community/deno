@@ -1,35 +1,45 @@
-import * as base64 from 'https://deno.land/std@0.177.0/encoding/base64.ts';
+import * as base64 from "https://deno.land/std@0.177.0/encoding/base64.ts";
+import { CipherCCMTypes } from "https://deno.land/std@0.177.0/node/crypto.ts";
+import { createCipheriv, Cipher } from "https://deno.land/std@0.177.0/node/crypto.ts";
+//import * as chacha20Poly1305 from "https://deno.land/x/chacha20_poly1305@v0.2.0/mod.ts";
 import type {
 	Handler,
 	ConnInfo,
-} from 'https://deno.land/std@0.177.0/http/server.ts';
+} from "https://deno.land/std@0.177.0/http/server.ts";
 
 interface VercelRequestPayload {
 	method: string;
 	path: string;
 	headers: Record<string, string>;
 	body: string;
+
+	responseCallbackCipher?: CipherCCMTypes;
+	responseCallbackCipherIV?: string;
+	responseCallbackCipherKey?: string;
+	responseCallbackStream?: string;
+	responseCallbackUrl?: string;
 }
 
 type VercelResponseHeaders = Record<string, string | string[]>;
 
 interface VercelResponsePayload {
-	statusCode: number;
-	headers: VercelResponseHeaders;
-	encoding: 'base64';
-	body: string;
+	statusCode?: number;
+	headers?: VercelResponseHeaders;
+	encoding?: "base64";
+	body?: string;
 }
 
-const RUNTIME_PATH = '2018-06-01/runtime';
+const CRLF = `\r\n`;
+const RUNTIME_PATH = "2018-06-01/runtime";
 
 const { _HANDLER, ENTRYPOINT, AWS_LAMBDA_RUNTIME_API } = Deno.env.toObject();
 
-Deno.env.delete('SHLVL');
+Deno.env.delete("SHLVL");
 
 function fromVercelRequest(payload: VercelRequestPayload): Request {
 	const headers = new Headers(payload.headers);
-	const base = `${headers.get('x-forwarded-proto')}://${headers.get(
-		'x-forwarded-host'
+	const base = `${headers.get("x-forwarded-proto")}://${headers.get(
+		"x-forwarded-host"
 	)}`;
 	const url = new URL(payload.path, base);
 	const body = payload.body ? base64.decode(payload.body) : undefined;
@@ -44,7 +54,7 @@ function headersToVercelHeaders(headers: Headers): VercelResponseHeaders {
 	const h: VercelResponseHeaders = {};
 	for (const [name, value] of headers) {
 		const cur = h[name];
-		if (typeof cur === 'string') {
+		if (typeof cur === "string") {
 			h[name] = [cur, value];
 		} else if (Array.isArray(cur)) {
 			cur.push(value);
@@ -56,7 +66,7 @@ function headersToVercelHeaders(headers: Headers): VercelResponseHeaders {
 }
 
 async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
-	let body = '';
+	let body = "";
 	const bodyBuffer = await res.arrayBuffer();
 	if (bodyBuffer.byteLength > 0) {
 		body = base64.encode(bodyBuffer);
@@ -65,7 +75,7 @@ async function toVercelResponse(res: Response): Promise<VercelResponsePayload> {
 	return {
 		statusCode: res.status,
 		headers: headersToVercelHeaders(res.headers),
-		encoding: 'base64',
+		encoding: "base64",
 		body,
 	};
 }
@@ -80,29 +90,132 @@ async function processEvents(): Promise<void> {
 			if (!handler) {
 				const mod = await import(`./${_HANDLER}`);
 				handler = mod.default;
-				if (typeof handler !== 'function') {
-					throw new Error('Failed to load handler function');
+				if (typeof handler !== "function") {
+					throw new Error("Failed to load handler function");
 				}
 			}
 
 			const payload = JSON.parse(event.body) as VercelRequestPayload;
+			const {
+				responseCallbackCipher,
+				responseCallbackCipherIV,
+				responseCallbackCipherKey,
+				responseCallbackStream,
+				responseCallbackUrl,
+			} = payload;
+
+			console.log({
+				responseCallbackCipher,
+				responseCallbackCipherIV,
+				responseCallbackCipherKey,
+				responseCallbackStream,
+				responseCallbackUrl,
+			});
+
 			const req = fromVercelRequest(payload);
 
 			const connInfo: ConnInfo = {
 				// TODO: how to properly calculate these?
 				// @ts-ignore - `rid` is not on the `ConnInfo` interface, but it's required by Oak
 				rid: 0,
-				localAddr: { hostname: '127.0.0.1', port: 0, transport: 'tcp' },
+				localAddr: { hostname: "127.0.0.1", port: 0, transport: "tcp" },
 				remoteAddr: {
-					hostname: '127.0.0.1',
+					hostname: "127.0.0.1",
 					port: 0,
-					transport: 'tcp',
+					transport: "tcp",
 				},
 			};
 
+			let socket: Deno.TcpConn | undefined;
+			let cipher: Cipher | undefined;
+			let url: URL | undefined;
+			const encoder = new TextEncoder();
+
+			if (responseCallbackUrl) {
+				url = new URL(responseCallbackUrl);
+				socket = await Deno.connect({
+					hostname: url.hostname,
+					port: parseInt(url.port, 10),
+				});
+				socket.write(
+					encoder.encode(`${responseCallbackStream}${CRLF}`)
+				);
+			}
+
+			if (
+				responseCallbackCipher &&
+				responseCallbackCipherKey &&
+				responseCallbackCipherIV
+			) {
+				cipher = createCipheriv(
+					responseCallbackCipher,
+					base64.decode(responseCallbackCipherKey),
+					base64.decode(responseCallbackCipherIV)
+				);
+			}
+
 			// Run user code
 			const res = await handler(req, connInfo);
-			result = await toVercelResponse(res);
+
+			if (
+				socket &&
+				url &&
+				cipher
+			) {
+				//const key = base64.decode(responseCallbackCipherKey);
+				//const iv = base64.decode(responseCallbackCipherIV);
+
+				const chunked = new TransformStream<Uint8Array, Uint8Array>({
+					start() {},
+					transform(chunk, controller) {
+						controller.enqueue(
+							encoder.encode(`${chunk.byteLength}${CRLF}`)
+						);
+						controller.enqueue(chunk);
+						controller.enqueue(encoder.encode(CRLF));
+					},
+				});
+
+				const c = new TransformStream<Uint8Array, Uint8Array>({
+					start() {},
+					transform(chunk, controller) {
+						const buf = cipher?.update(chunk);
+						if (buf) controller.enqueue(buf);
+					},
+					flush(controller) {
+						const buf = cipher?.final();
+						if (buf) controller.enqueue(buf);
+					}
+				});
+
+				let headers = `Host: ${url.host}${CRLF}`;
+				headers += `transfer-encoding: chunked${CRLF}`;
+				headers += `x-vercel-status-code: ${res.status}${CRLF}`;
+				for (const [name, value] of res.headers) {
+					if (!["connection", "transfer-encoding"].includes(name)) {
+						headers += `x-vercel-header-${name}: ${value}${CRLF}`;
+					}
+				}
+
+				c.writable
+					.getWriter()
+					.write(
+						encoder.encode(
+							`POST ${url.pathname} HTTP/1.1${CRLF}${headers}${CRLF}`
+						)
+					);
+
+				if (res.body) {
+					await res.body
+						.pipeThrough(chunked)
+						.pipeThrough(c)
+						// @ts-ignore TcpConn isn't WritableStream?
+						.pipeTo(socket);
+				}
+				result = {};
+			} else {
+				result = await toVercelResponse(res);
+			}
 		} catch (e: unknown) {
 			const err = e instanceof Error ? e : new Error(String(e));
 			console.error(err);
@@ -114,7 +227,7 @@ async function processEvents(): Promise<void> {
 }
 
 async function nextInvocation() {
-	const res = await request('invocation/next');
+	const res = await request("invocation/next");
 
 	if (res.status !== 200) {
 		throw new Error(
@@ -122,15 +235,15 @@ async function nextInvocation() {
 		);
 	}
 
-	const traceId = res.headers.get('lambda-runtime-trace-id');
-	if (typeof traceId === 'string') {
-		Deno.env.set('_X_AMZN_TRACE_ID', traceId);
+	const traceId = res.headers.get("lambda-runtime-trace-id");
+	if (typeof traceId === "string") {
+		Deno.env.set("_X_AMZN_TRACE_ID", traceId);
 	} else {
-		Deno.env.delete('_X_AMZN_TRACE_ID');
+		Deno.env.delete("_X_AMZN_TRACE_ID");
 	}
 
-	const awsRequestId = res.headers.get('lambda-runtime-aws-request-id');
-	if (typeof awsRequestId !== 'string') {
+	const awsRequestId = res.headers.get("lambda-runtime-aws-request-id");
+	if (typeof awsRequestId !== "string") {
 		throw new Error(
 			'Did not receive "lambda-runtime-aws-request-id" header'
 		);
@@ -145,9 +258,9 @@ async function invokeResponse(
 	awsRequestId: string
 ) {
 	const res = await request(`invocation/${awsRequestId}/response`, {
-		method: 'POST',
+		method: "POST",
 		headers: {
-			'Content-Type': 'application/json',
+			"Content-Type": "application/json",
 		},
 		body: JSON.stringify(result),
 	});
@@ -165,10 +278,10 @@ function invokeError(err: Error, awsRequestId: string) {
 async function postError(path: string, err: Error): Promise<void> {
 	const lambdaErr = toLambdaErr(err);
 	const res = await request(path, {
-		method: 'POST',
+		method: "POST",
 		headers: {
-			'Content-Type': 'application/json',
-			'Lambda-Runtime-Function-Error-Type': 'Unhandled',
+			"Content-Type": "application/json",
+			"Lambda-Runtime-Function-Error-Type": "Unhandled",
 		},
 		body: JSON.stringify(lambdaErr),
 	});
@@ -194,7 +307,7 @@ function toLambdaErr({ name, message, stack }: Error) {
 	return {
 		errorType: name,
 		errorMessage: message,
-		stackTrace: (stack || '').split('\n').slice(1),
+		stackTrace: (stack || "").split("\n").slice(1),
 	};
 }
 

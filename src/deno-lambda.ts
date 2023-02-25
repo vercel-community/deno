@@ -63,6 +63,7 @@ export class DenoLambda extends Lambda {
 			...opts,
 			runtime: 'provided.al2',
 			supportsWrapper: true,
+			experimentalResponseStreaming: true,
 		});
 	}
 

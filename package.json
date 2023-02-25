@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "build": "./build.sh",
-    "now-build": "next build",
+    "now-build": "true",
     "prepublishOnly": "npm run build",
     "test": "jest"
   },
