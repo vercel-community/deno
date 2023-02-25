@@ -164,12 +164,12 @@ export class DenoLambda extends Lambda {
 				cwd,
 				join(cwd, entrypoint)
 			),
-			glob("node_modules/.deno/**", {
+			glob('node_modules/.deno/**', {
 				cwd,
 				includeDirectories: true,
-			}).then(files => {
+			}).then((files) => {
 				Object.assign(outputFiles, files);
-			})
+			}),
 		]);
 
 		// Add additional files that were referenced from
