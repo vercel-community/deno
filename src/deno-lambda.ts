@@ -172,7 +172,6 @@ export class DenoLambda extends Lambda {
 			})
 		]);
 
-
 		// Add additional files that were referenced from
 		// Deno CLI flags in the shebang
 		const additionalFiles = new Set<string>();
