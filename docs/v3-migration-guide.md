@@ -13,7 +13,7 @@ export default async function (request: Request): Promise<Response> {
 
 ## Migrate from `ServerRequest`
 
-The more recently supported `ServerRequest` syntax requires very little changes. The request interface is very similar to the standardized `Request` type. However, you were using the `.respond()` function, you'll want to instead return a `Response` instance.
+The more recently supported `ServerRequest` syntax requires very little changes. The request interface is very similar to the standardized `Request` type. However, if you were using the `.respond()` function, you'll want to instead return a `Response` instance.
 
 ```diff
 -import { ServerRequest } from 'https://deno.land/std@0.106.0/http/server.ts';
