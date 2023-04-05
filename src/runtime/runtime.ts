@@ -1,7 +1,4 @@
 import * as base64 from "https://deno.land/std@0.177.0/encoding/base64.ts";
-import { CipherCCMTypes } from "https://deno.land/std@0.177.0/node/crypto.ts";
-import { createCipheriv, Cipher } from "https://deno.land/std@0.177.0/node/crypto.ts";
-//import * as chacha20Poly1305 from "https://deno.land/x/chacha20_poly1305@v0.2.0/mod.ts";
 import type {
 	Handler,
 	ConnInfo,
@@ -13,7 +10,7 @@ interface VercelRequestPayload {
 	headers: Record<string, string>;
 	body: string;
 
-	responseCallbackCipher?: CipherCCMTypes;
+	responseCallbackCipher?: string;
 	responseCallbackCipherIV?: string;
 	responseCallbackCipherKey?: string;
 	responseCallbackStream?: string;
@@ -127,7 +124,6 @@ async function processEvents(): Promise<void> {
 			};
 
 			let socket: Deno.TcpConn | undefined;
-			let cipher: Cipher | undefined;
 			let url: URL | undefined;
 			const encoder = new TextEncoder();
 
@@ -142,16 +138,31 @@ async function processEvents(): Promise<void> {
 				);
 			}
 
+			let key: CryptoKey;
+			let iv: Uint8Array;
+
+			const encrypt = async (data: Uint8Array) => {
+				const encrypted = await crypto.subtle.encrypt(
+					{ name: "AES-CTR", counter: iv, length: 128 },
+					key,
+					data
+				);
+				return encrypted;
+			}
+
 			if (
 				responseCallbackCipher &&
 				responseCallbackCipherKey &&
 				responseCallbackCipherIV
 			) {
-				cipher = createCipheriv(
-					responseCallbackCipher,
+				key = await crypto.subtle.importKey(
+					"raw",
 					base64.decode(responseCallbackCipherKey),
-					base64.decode(responseCallbackCipherIV)
+					"AES-CTR",
+					true,
+					["encrypt"]
 				);
+				iv = base64.decode(responseCallbackCipherIV);
 			}
 
 			// Run user code
@@ -159,8 +170,7 @@ async function processEvents(): Promise<void> {
 
 			if (
 				socket &&
-				url &&
-				cipher
+				url
 			) {
 				//const key = base64.decode(responseCallbackCipherKey);
 				//const iv = base64.decode(responseCallbackCipherIV);
@@ -168,8 +178,9 @@ async function processEvents(): Promise<void> {
 				const chunked = new TransformStream<Uint8Array, Uint8Array>({
 					start() {},
 					transform(chunk, controller) {
+						console.log({ chunk: new TextDecoder().decode(chunk) });
 						controller.enqueue(
-							encoder.encode(`${chunk.byteLength}${CRLF}`)
+							encoder.encode(`${(chunk.length).toString(16)}${CRLF}`)
 						);
 						controller.enqueue(chunk);
 						controller.enqueue(encoder.encode(CRLF));
@@ -178,14 +189,13 @@ async function processEvents(): Promise<void> {
 
 				const c = new TransformStream<Uint8Array, Uint8Array>({
 					start() {},
-					transform(chunk, controller) {
-						const buf = cipher?.update(chunk);
-						if (buf) controller.enqueue(buf);
+					async transform(chunk, controller) {
+						console.log({ encrypting: new TextDecoder().decode(chunk) });
+						const encrypted = await encrypt(chunk);
+						const arr = new Uint8Array(encrypted)
+						console.log({ encrypted: new TextDecoder().decode(arr), bytes: encrypted.byteLength });
+						controller.enqueue(arr);
 					},
-					flush(controller) {
-						const buf = cipher?.final();
-						if (buf) controller.enqueue(buf);
-					}
 				});
 
 				let headers = `Host: ${url.host}${CRLF}`;
@@ -196,21 +206,24 @@ async function processEvents(): Promise<void> {
 						headers += `x-vercel-header-${name}: ${value}${CRLF}`;
 					}
 				}
+				console.log(headers);
 
-				c.writable
-					.getWriter()
-					.write(
-						encoder.encode(
-							`POST ${url.pathname} HTTP/1.1${CRLF}${headers}${CRLF}`
-						)
-					);
+				const writer = c.writable.getWriter();
+				writer.write(
+					encoder.encode(
+						`POST ${url.pathname} HTTP/1.1${CRLF}${headers}${CRLF}`
+					)
+				);
 
 				if (res.body) {
+					writer.releaseLock();
 					await res.body
 						.pipeThrough(chunked)
 						.pipeThrough(c)
-						// @ts-ignore TcpConn isn't WritableStream?
-						.pipeTo(socket);
+						.pipeTo(socket.writable);
+				} else {
+					writer.close();
+					await c.readable.pipeTo(socket.writable);
 				}
 				result = {};
 			} else {
