@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@tootallnate/once':
     specifier: ^2.0.0
@@ -61,14 +65,14 @@ devDependencies:
     specifier: 4.15.0
     version: 4.15.0(eslint@7.19.0)(typescript@4.9.4)
   '@vercel/build-utils':
-    specifier: ^5.2.0
-    version: 5.9.0
+    specifier: ^7.11.0
+    version: 7.11.0
   '@vercel/frameworks':
-    specifier: ^0.2.0
-    version: 0.2.0
+    specifier: ^3.0.1
+    version: 3.0.1
   '@vercel/routing-utils':
-    specifier: ^1.9.2
-    version: 1.13.5
+    specifier: ^3.1.0
+    version: 3.1.0
   eslint:
     specifier: 7.19.0
     version: 7.19.0
@@ -550,6 +554,10 @@ packages:
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
       - supports-color
+    dev: true
+
+  /@iarna/toml@2.2.3:
+    resolution: {integrity: sha512-FmuxfCuolpLl0AnQ2NHSzoUKWEJDFl63qXjzdoWBVyFCXzMGm1spBzk7LeHNoVCiWCF7mRVms9e6jEV9+MoPbg==}
     dev: true
 
   /@istanbuljs/load-nyc-config@1.1.0:
@@ -1256,16 +1264,24 @@ packages:
       eslint-visitor-keys: 2.1.0
     dev: true
 
-  /@vercel/build-utils@5.9.0:
-    resolution: {integrity: sha512-LJRhd/ritLGHH+YvZ+DC7AW3Jr87UZHFHz2h2ENULDZ8qAo5LJH+y+Cg11uxfXkhQKK2f/AZQJXyKVyu1BBwdQ==}
+  /@vercel/build-utils@7.11.0:
+    resolution: {integrity: sha512-UFrx1hNIjNJJkd0NZrYfaOrmcWhQmrVsbKe9o3L9jX9J1iufG685wIZ9tFCKKC0Fa2HWbNDNzNxrE5SCAS2lyA==}
     dev: true
 
-  /@vercel/frameworks@0.2.0:
-    resolution: {integrity: sha512-lEDiMnzzw9acbsl/0doN3zLqldlsdmdg1EY/jrKfrQIYpX3yiGBCLpAqUZ7CJaYaxZ/El0owxvR0eSZflnqFag==}
+  /@vercel/error-utils@2.0.2:
+    resolution: {integrity: sha512-Sj0LFafGpYr6pfCqrQ82X6ukRl5qpmVrHM/191kNYFqkkB9YkjlMAj6QcEsvCG259x4QZ7Tya++0AB85NDPbKQ==}
     dev: true
 
-  /@vercel/routing-utils@1.13.5:
-    resolution: {integrity: sha512-F1ED6zEdmpkLfQLGS55U654BouM0MCwCp3pQmQhCWsc9QTIkDif8x+qMqNV3GNeAmQZ4H4q6l1Ks2W4wEu5aKQ==}
+  /@vercel/frameworks@3.0.1:
+    resolution: {integrity: sha512-8nt1OW3r32Oxjc6SHJ6avgOMa7fce5+AnMApIscAuyt/zWURKgmcyJ3inztSHbPRk0zYZwoDXJ7uDb+w8y/1Eg==}
+    dependencies:
+      '@iarna/toml': 2.2.3
+      '@vercel/error-utils': 2.0.2
+      js-yaml: 3.13.1
+    dev: true
+
+  /@vercel/routing-utils@3.1.0:
+    resolution: {integrity: sha512-Ci5xTjVTJY/JLZXpCXpLehMft97i9fH34nu9PGav6DtwkVUF6TOPX86U0W0niQjMZ5n6/ZP0BwcJK2LOozKaGw==}
     dependencies:
       path-to-regexp: 6.1.0
     optionalDependencies:
@@ -3534,6 +3550,14 @@ packages:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
     dev: true
 
+  /js-yaml@3.13.1:
+    resolution: {integrity: sha512-YfbcO7jXDdyj0DGxYVSlSeQNHbD7XPWvrVWeVUujrQEoZzWJIRrCPoyk6kL6IAjAG2IolMK4T0hNUe0HOUs5Jw==}
+    hasBin: true
+    dependencies:
+      argparse: 1.0.10
+      esprima: 4.0.1
+    dev: true
+
   /js-yaml@3.14.1:
     resolution: {integrity: sha512-okMH7OXXJ7YrN9Ok3/SXrnu4iX9yOk+25nqX4imS2npuvTYDmo/QEZoqwZkYaIDk3jVvBOTOIEgEhaLOynBS9g==}
     hasBin: true
@@ -5064,7 +5088,3 @@ packages:
       buffer-crc32: 0.2.13
       fd-slicer: 1.1.0
     dev: false
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false

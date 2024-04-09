@@ -1,11 +1,11 @@
 /**
  * The default version of Deno that will be downloaded at build-time.
  */
-const DEFAULT_DENO_VERSION = 'v1.40.2';
+const DEFAULT_DENO_VERSION = 'v1.42.1';
 
-import { spawn } from 'child_process';
-import { fileURLToPath, pathToFileURL } from 'url';
-import { join, relative } from 'path';
+import { spawn } from 'node:child_process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { join, relative } from 'node:path';
 import {
 	chmodSync,
 	readFile,
@@ -15,8 +15,8 @@ import {
 } from 'fs-extra';
 import once from '@tootallnate/once';
 import {
-	Env,
-	Files,
+	type Env,
+	type Files,
 	FileBlob,
 	FileFsRef,
 	Lambda,
@@ -117,7 +117,7 @@ export class DenoLambda extends Lambda {
 		delete args['--include-files'];
 
 		const argv = ['--allow-all', ...args];
-		console.log(`Caching imports…`);
+		console.log('Caching imports…');
 		console.log(`deno run ${argv.join(' ')} ${entrypoint}`);
 		const cp = spawn(
 			'deno',
