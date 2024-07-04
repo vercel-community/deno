@@ -146,6 +146,9 @@ export class DenoLambda extends Lambda {
 			'bin/deno': await FileFsRef.fromFsPath({
 				fsPath: join(runtimeDeno.dir, 'deno'),
 			}),
+			'deno.lock': await FileFsRef.fromFsPath({
+				fsPath: join(cwd, 'deno.lock'),
+			}),
 		};
 
 		await Promise.all([
