@@ -1,7 +1,7 @@
 /**
  * The default version of Deno that will be downloaded at build-time.
  */
-const DEFAULT_DENO_VERSION = 'v1.42.1';
+const DEFAULT_DENO_VERSION = 'v1.44.4';
 
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -147,6 +147,14 @@ export class DenoLambda extends Lambda {
 				fsPath: join(runtimeDeno.dir, 'deno'),
 			}),
 		};
+
+		try {
+			outputFiles['deno.lock'] = await FileFsRef.fromFsPath({
+				fsPath: join(cwd, 'deno.lock'),
+			});
+		} catch {
+			// Ignore if `deno.lock` does not exist.
+		}
 
 		await Promise.all([
 			traceDenoInfo(
