@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { DenoLambda } from './deno-lambda';
-import { BuildV3, download, getProvidedRuntime } from '@vercel/build-utils';
+import { type BuildV3, download, getProvidedRuntime } from '@vercel/build-utils';
 
 export const build: BuildV3 = async ({
 	workPath,
