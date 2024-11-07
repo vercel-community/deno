@@ -1,7 +1,7 @@
 /**
  * The default version of Deno that will be downloaded at build-time.
  */
-const DEFAULT_DENO_VERSION = 'v1.44.4';
+const DEFAULT_DENO_VERSION = 'v1.46.3';
 
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -47,7 +47,7 @@ const bootstrapData = readFileSync(bootstrapPath, 'utf8');
 const bootstrapMode = statSync(bootstrapPath).mode;
 
 export interface DenoLambdaOptions
-	extends Omit<LambdaOptionsWithFiles, 'runtime' | 'supportsWrapper'> {}
+	extends Omit<LambdaOptionsWithFiles, 'runtime' | 'supportsWrapper'> { }
 
 export interface DenoLambdaBuildOptions {
 	entrypoint: string;
@@ -99,11 +99,11 @@ export class DenoLambda extends Lambda {
 			// then also download Deno binary for the build host
 			process.platform !== 'linux' || process.arch !== 'x64'
 				? downloadDeno(
-						denoDir,
-						denoVersion,
-						process.platform,
-						process.arch
-				  )
+					denoDir,
+					denoVersion,
+					process.platform,
+					process.arch
+				)
 				: undefined,
 		]);
 
@@ -215,7 +215,12 @@ export class DenoLambda extends Lambda {
 		return new DenoLambda({
 			files: outputFiles,
 			handler: entrypoint,
-			environment: args.env,
+			environment: {
+				...args.env,
+				//VERCEL_FORCE_STREAMING_RUNTIME: '1',
+				SCRIPT_PATH: '/var/task/bootstrap',
+				FOO: 'bar'
+			},
 		});
 	}
 }

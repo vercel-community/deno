@@ -11,4 +11,4 @@ else
     export DENO_DIR="$LAMBDA_TASK_ROOT/.vercel/cache/deno"
 fi
 
-exec ${AWS_LAMBDA_EXEC_WRAPPER-} deno run $args ".vercel-deno-runtime.ts"
+exec deno run $args ".vercel-deno-runtime.ts"
