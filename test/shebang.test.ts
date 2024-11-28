@@ -4,17 +4,17 @@ describe('shebang', () => {
     it('should parse basic', () => {
         const parsed = parse('#!/usr/bin/env deno run --version=v1.2.3 --location http://example.com/test')
         expect(parsed).toMatchInlineSnapshot(`
-Object {
+{
   "--version": "v1.2.3",
-  "_": Array [
+  "_": [
     "--location",
     "http://example.com/test",
   ],
-  "env": Object {},
+  "env": {},
 }
 `);
         expect(Array.from(parsed)).toMatchInlineSnapshot(`
-Array [
+[
   "--version",
   "v1.2.3",
   "--location",
@@ -25,9 +25,9 @@ Array [
     it('should parse with env vars', () => {
         const parsed = parse('#!/usr/bin/env DENO_DIR=/tmp ANOTHER="with space" deno run')
         expect(parsed).toMatchInlineSnapshot(`
-Object {
-  "_": Array [],
-  "env": Object {
+{
+  "_": [],
+  "env": {
     "ANOTHER": "with space",
     "DENO_DIR": "/tmp",
   },

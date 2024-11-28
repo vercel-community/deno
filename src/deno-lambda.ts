@@ -1,7 +1,7 @@
 /**
  * The default version of Deno that will be downloaded at build-time.
  */
-const DEFAULT_DENO_VERSION = 'v1.44.4';
+const DEFAULT_DENO_VERSION = 'v2.1.2';
 
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';

@@ -12,7 +12,7 @@ import { streamToBuffer } from '@vercel/build-utils';
 import { Entry, ZipFile, fromBuffer as zipFromBuffer } from 'yauzl-promise';
 
 async function* createZipIterator(zipFile: ZipFile) {
-	let entry: Entry;
+	let entry: Entry | null;
 	while ((entry = await zipFile.readEntry()) !== null) {
 		yield entry;
 	}
@@ -21,10 +21,10 @@ async function* createZipIterator(zipFile: ZipFile) {
 export async function unzip(buffer: Buffer, dir: string): Promise<void> {
 	const zipFile = await zipFromBuffer(buffer);
 	for await (const entry of createZipIterator(zipFile)) {
-		if (entry.fileName.startsWith('__MACOSX/')) continue;
+		if (entry.filename.startsWith('__MACOSX/')) continue;
 
 		try {
-			const destDir = path.dirname(path.join(dir, entry.fileName));
+			const destDir = path.dirname(path.join(dir, entry.filename));
 			await fs.mkdirp(destDir);
 
 			const canonicalDestDir = await fs.realpath(destDir);
@@ -32,7 +32,7 @@ export async function unzip(buffer: Buffer, dir: string): Promise<void> {
 
 			if (relativeDestDir.split(path.sep).includes('..')) {
 				throw new Error(
-					`Out of bound path "${canonicalDestDir}" found while processing file ${entry.fileName}`
+					`Out of bound path "${canonicalDestDir}" found while processing file ${entry.filename}`
 				);
 			}
 
@@ -49,7 +49,7 @@ async function extractEntry(
 	entry: Entry,
 	dir: string
 ): Promise<void> {
-	const dest = path.join(dir, entry.fileName);
+	const dest = path.join(dir, entry.filename);
 
 	// convert external file attr int into a fs stat mode int
 	const mode = (entry.externalFileAttributes >> 16) & 0xffff;
@@ -61,7 +61,7 @@ async function extractEntry(
 	let isDir = (mode & IFMT) === IFDIR;
 
 	// Failsafe, borrowed from jsZip
-	if (!isDir && entry.fileName.endsWith('/')) {
+	if (!isDir && entry.filename.endsWith('/')) {
 		isDir = true;
 	}
 
