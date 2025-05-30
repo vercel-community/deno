@@ -78,6 +78,7 @@ export const startDevServer: StartDevServer = async ({
 		const result = await Promise.race([onPort, onPortFile, onExit]);
 
 		if (isPortInfo(result)) {
+			if (!child.pid) throw new Error(`Failed to start dev server for "${entrypoint}" (PID is undefined)`)
 			return {
 				port: result.port,
 				pid: child.pid,

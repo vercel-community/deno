@@ -39,6 +39,8 @@ export function parse(data: string) {
 			'-c': '--config',
 			'--import-map': String,
 			'--lock': String,
+			'--allow-all': Boolean,
+			'--allow-net': [String],
 
 			// `vercel-deno` specific flags
 			'--version': String,
