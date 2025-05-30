@@ -1,7 +1,7 @@
 /**
  * The default version of Deno that will be downloaded at build-time.
  */
-const DEFAULT_DENO_VERSION = 'v1.44.4';
+const DEFAULT_DENO_VERSION = 'v2.3.5';
 
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -115,6 +115,17 @@ export class DenoLambda extends Lambda {
 		// get included in the args that are passed to `deno run`
 		const includeFiles = args['--include-files'] || [];
 		delete args['--include-files'];
+
+		// Force access to lambda runtime API
+		// If --allow-all is unset, we'll push the permission to --allow-net
+		if (
+			env.AWS_LAMBDA_RUNTIME_API &&
+			!args['--allow-all'] && 
+			!args['--allow-net']?.includes(env.AWS_LAMBDA_RUNTIME_API)
+		) {
+			args['--allow-net'] ??= []
+			args['--allow-net'].push(env.AWS_LAMBDA_RUNTIME_API)
+		}
 
 		const argv = ['--allow-all', ...args];
 		console.log('Caching imports…');
