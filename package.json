@@ -45,7 +45,7 @@
     "@vercel/build-utils": "^10.6.0",
     "@vercel/frameworks": "^3.3.1",
     "@vercel/routing-utils": "^4.0.0",
-    "eslint": "^9.28.0",
+    "eslint": "^8.57.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-next": "^15.0.3",
     "eslint-config-prettier": "^10.1.5",
@@ -64,8 +64,7 @@
     "preset": "ts-jest",
     "globals": {
       "ts-jest": {
-        "diagnostics": false,
-        "isolatedModules": true
+        "diagnostics": false
       }
     },
     "verbose": false,
@@ -74,5 +73,9 @@
       "<rootDir>/test/**/*.test.ts"
     ]
   },
-  "packageManager": "pnpm@8.5.0"
+  "packageManager": "pnpm@8.5.0",
+  "overrides": {
+    "minimatch": "5.1.2",
+    "glob": "8.1.0"
+  }
 }
