@@ -7,6 +7,9 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+permissions:
+  contents: read
+
 jobs:
   release:
     name: Release
@@ -32,12 +35,10 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create Release Pull Request or Publish to npm
-        id: changesets
+      - name: Create Release Pull Request or Publish
         uses: changesets/action@v1
         with:
           version: pnpm version
           publish: pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
