@@ -6,10 +6,10 @@
   "types": "dist/index.d.ts",
   "author": "Nathan Rajlich <nate@vercel.com>",
   "license": "MIT",
-  "homepage": "https://github.com/TooTallNate/vercel-deno",
+  "homepage": "https://github.com/vercel-community/deno",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TooTallNate/vercel-deno.git"
+    "url": "https://github.com/vercel-community/deno.git"
   },
   "files": [
     "dist"
