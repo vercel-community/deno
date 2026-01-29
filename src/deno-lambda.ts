@@ -61,7 +61,7 @@ export class DenoLambda extends Lambda {
 	constructor(opts: DenoLambdaOptions) {
 		super({
 			...opts,
-			runtime: 'provided.al2',
+			runtime: 'provided.al2023',
 			supportsWrapper: true,
 		});
 	}
