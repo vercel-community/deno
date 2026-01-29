@@ -65,9 +65,7 @@
     "https://deno.land/x/oak@v11.1.0/structured_clone.ts": "ecf42598652b8082f37252cb873d6e257ad728e6fe73c6bd61f343d94501fbde",
     "https://deno.land/x/oak@v11.1.0/testing.ts": "7612656efd2975f7a2e6848609f5971922dbec46b76372c5c623202fdd7b9a85",
     "https://deno.land/x/oak@v11.1.0/util.ts": "3af8c4ed04c6cc2bedbe66e562a77fc59c72df31c55a902a63885861ca1639d6",
-    "https://deno.land/x/path_to_regexp@v6.2.1/index.ts": "894060567837bae8fc9c5cbd4d0a05e9024672083d5883b525c031eea940e556",
-    "https://esm.sh/ms@2.1.3": "0b0eb89693582effa710434875425ab1d12111cc90259328afe0c84a3460c5ac",
-    "https://esm.sh/v135/ms@2.1.3/denonext/ms.mjs": "0f06597e493998793b8f52232868976128fca326eec3bcd56f10e66e6efd1839"
+    "https://deno.land/x/path_to_regexp@v6.2.1/index.ts": "894060567837bae8fc9c5cbd4d0a05e9024672083d5883b525c031eea940e556"
   },
   "workspace": {
     "packageJson": {

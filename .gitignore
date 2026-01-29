@@ -4,3 +4,5 @@
 /*.tgz
 /.next
 /.vercel
+.vercel
+.env*.local
