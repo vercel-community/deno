@@ -1,9 +1,9 @@
 # vercel-deno
 
 > [!WARNING]
-> The Deno team has [announced the end of development of the Deno runtime](https://deno.com/blog/cloudflare): it will receive bug fixes and security updates for one more year, after which development will end.
+> The Deno team has [announced the end of development of the Deno runtime](https://deno.com/blog/cloudflare).
 >
-> `vercel-deno` is a community-maintained custom runtime and is not supported by Vercel. We recommend migrating to [Vercel's Node.js runtime](https://vercel.com/docs/functions/runtimes/node-js), which supports TypeScript and the same Web-standard `Request`/`Response` handler signature.
+> `vercel-deno` was a community-maintained custom runtime and is not supported by Vercel. We recommend migrating to [Vercel's Node.js runtime](https://vercel.com/docs/functions/runtimes/node-js), which supports TypeScript and the same Web-standard `Request`/`Response` handler signature.
 
 The Deno Runtime compiles a TypeScript or JavaScript function into a serverless
 function powered by [Deno](https://deno.land), running on
