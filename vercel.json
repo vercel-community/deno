@@ -1,5 +1,4 @@
 {
-  "public": true,
   "functions": {
     "api/**/*.[jt]s": {
       "runtime": "vercel-dev-builder@0.0.5"
