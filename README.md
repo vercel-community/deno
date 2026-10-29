@@ -1,4 +1,9 @@
-[<img src="https://og-image.vercel.app/**vercel-deno**.png?theme=light&md=1&fontSize=100px&images=https%3A%2F%2Fassets.vercel.com%2Fimage%2Fupload%2Ffront%2Fassets%2Fdesign%2Fvercel-triangle-black.svg&images=https%3A%2F%2Fgithub.com%2Fdenolib%2Fhigh-res-deno-logo%2Fraw%2Fmaster%2Fdeno_hr_circle.svg&widths=184&widths=220&heights=160&heights=220">](https://github.com/TooTallNate/vercel-deno)
+# vercel-deno
+
+> [!WARNING]
+> The Deno team has [announced the end of development of the Deno runtime](https://deno.com/blog/cloudflare).
+>
+> `vercel-deno` was a community-maintained custom runtime and is not supported by Vercel. We recommend migrating to [Vercel's Node.js runtime](https://vercel.com/docs/functions/runtimes/node-js), which supports TypeScript and the same Web-standard `Request`/`Response` handler signature.
 
 The Deno Runtime compiles a TypeScript or JavaScript function into a serverless
 function powered by [Deno](https://deno.land), running on
